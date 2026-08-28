@@ -35,6 +35,7 @@ jobs:
         working-directory: apps/api
     env:
       DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+      JWT_ACCESS_SECRET: ci-only-access-secret-with-at-least-32-characters
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

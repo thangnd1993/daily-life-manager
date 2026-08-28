@@ -25,6 +25,7 @@ async function bootstrap() {
     .setTitle('Daily Life Manager API')
     .setDescription('Foundation API for Daily Life Manager')
     .setVersion('0.1.0')
+    .addBearerAuth()
     .build();
   SwaggerModule.setup(
     `${prefix}/docs`,

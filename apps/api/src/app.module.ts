@@ -1,5 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { AuthModule } from './auth/auth.module';
 import { appConfig } from './config/app.config';
 import { environmentSchema } from './config/environment.validation';
 import { DatabaseModule } from './database/database.module';
@@ -14,9 +17,12 @@ import { QueueModule } from './queue/queue.module';
       load: [appConfig],
       validationSchema: environmentSchema,
     }),
+    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }]),
     DatabaseModule,
     QueueModule,
     HealthModule,
+    AuthModule,
   ],
+  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule {}

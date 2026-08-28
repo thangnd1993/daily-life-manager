@@ -1,5 +1,9 @@
 <header class="topbar">
   <a class="brand" routerLink="/">Daily Life Manager</a>
-  <span class="environment">Admin Portal · Foundation</span>
+  @if (auth.isAuthenticated()) {
+    <button class="logout" type="button" (click)="logout()">Sign out</button>
+  } @else {
+    <span class="environment">Admin Portal</span>
+  }
 </header>
 <main><router-outlet /></main>

@@ -1,8 +1,8 @@
 # Daily Life Manager
 
-Production-oriented multi-user personal management platform. Milestone 1 establishes the monorepo, API, admin portal,
-mobile foundation, local infrastructure, automated checks, and architecture documentation. Product features are not yet
-implemented.
+Production-oriented multi-user personal management platform. Milestones 1–2 establish the monorepo, infrastructure,
+secure account/session APIs, authenticated mobile experience, and protected administrator portal. Personal management
+domains are not yet implemented.
 
 ## Stack
 
@@ -34,6 +34,14 @@ Use Node.js 20 LTS, npm, Docker Desktop with Compose, and current stable Flutter
 The API defaults to `http://localhost:3000/api`; Swagger is at `/api/docs`. PostgreSQL uses port 5432 and Redis 6379.
 All local credentials in Compose are development-only. Environment variables are documented in `.env.example`.
 
+Authentication requires a random `JWT_ACCESS_SECRET` of at least 32 characters. Access TTL, refresh-session TTL, and
+password-reset TTL are configurable. Bootstrap the first administrator idempotently with `ADMIN_EMAIL`,
+`ADMIN_PASSWORD`, and `ADMIN_DISPLAY_NAME`, then run `npm run prisma:seed` in `apps/api`. No default administrator exists.
+
+The auth API provides registration, login, refresh rotation, logout, current profile, password change, and password
+reset request/consumption under `/api/auth`. Public registration always creates `USER`; only the environment-driven seed
+can bootstrap `ADMIN` during this milestone.
+
 ## Quality commands
 
 - API: `npm run format`, `npm run lint`, `npm test`, `npm run build`, `npm run prisma:generate`
@@ -43,5 +51,5 @@ All local credentials in Compose are development-only. Environment variables are
 
 ## Status
 
-Milestone 1 foundation is implemented. Authentication, user administration, attendance, finance, gold prices, alerts,
-notifications, and other product behavior remain intentionally pending. See [the roadmap](docs/roadmap.md).
+Milestone 1 is complete and Milestone 2 authentication is implemented pending final verification. User administration,
+attendance, finance, gold prices, alerts, notifications, and later product behavior remain pending.

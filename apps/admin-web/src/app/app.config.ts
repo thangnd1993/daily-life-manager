@@ -4,7 +4,8 @@ import { provideRouter } from '@angular/router';
 
 import { routes } from './app.routes';
 import { apiBaseUrlInterceptor } from './core/http/api-base-url.interceptor';
+import { authInterceptor } from './core/auth/auth.interceptor';
 
 export const appConfig: ApplicationConfig = {
-  providers: [provideRouter(routes), provideHttpClient(withInterceptors([apiBaseUrlInterceptor]))],
+  providers: [provideRouter(routes), provideHttpClient(withInterceptors([apiBaseUrlInterceptor, authInterceptor]))],
 };
