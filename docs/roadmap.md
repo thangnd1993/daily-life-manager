@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] Milestone 1 — Foundation and repository setup (implementation complete; host verification and push blocked)
+- [x] Milestone 1 — Foundation and repository setup
 - [ ] Milestone 2 — Authentication and account foundation
 - [ ] Milestone 3 — Admin user management
 - [ ] Milestone 4 — Daily attendance
@@ -16,5 +16,5 @@
 - [ ] Milestone 14 — Production Docker and deployment preparation
 - [ ] Milestone 15 — iOS and Android release preparation
 
-Milestone 1 contains infrastructure and framework foundations only. It will be marked complete after Docker and Flutter
-verification plus a successful GitHub push. No later product milestone has started.
+Milestone 1 contains infrastructure and framework foundations only. GitHub-hosted CI verifies the API with PostgreSQL
+and Redis, the Angular admin portal, and the Flutter application. No later product milestone has started.
