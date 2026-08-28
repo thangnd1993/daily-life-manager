@@ -1,0 +1,23 @@
+.topbar {
+  align-items: center;
+  background: #102a43;
+  color: #f0f4f8;
+  display: flex;
+  justify-content: space-between;
+  padding: 1rem 2rem;
+}
+.brand {
+  color: inherit;
+  font-size: 1.125rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+.environment {
+  color: #bcccdc;
+  font-size: 0.875rem;
+}
+main {
+  margin: 0 auto;
+  max-width: 1200px;
+  padding: 2rem;
+}

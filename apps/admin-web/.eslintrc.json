@@ -1,0 +1,19 @@
+{
+  "root": true,
+  "ignorePatterns": ["dist/**"],
+  "overrides": [
+    {
+      "files": ["*.ts"],
+      "parser": "@typescript-eslint/parser",
+      "plugins": ["@typescript-eslint", "@angular-eslint"],
+      "extends": ["plugin:@angular-eslint/recommended"],
+      "rules": { "max-len": ["error", { "code": 120 }], "quotes": ["error", "single"], "semi": ["error", "always"] }
+    },
+    {
+      "files": ["*.html"],
+      "parser": "@angular-eslint/template-parser",
+      "plugins": ["@angular-eslint/template"],
+      "extends": ["plugin:@angular-eslint/template/recommended"]
+    }
+  ]
+}

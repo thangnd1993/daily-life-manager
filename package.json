@@ -1,0 +1,13 @@
+{
+  "name": "daily-life-manager",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "npm run build --prefix apps/api && npm run build --prefix apps/admin-web",
+    "format": "npm run format --prefix apps/api && npm run format --prefix apps/admin-web",
+    "lint": "npm run lint --prefix apps/api && npm run lint --prefix apps/admin-web",
+    "test": "npm run test --prefix apps/api -- --runInBand && npm run test:ci --prefix apps/admin-web",
+    "prisma:generate": "npm run prisma:generate --prefix apps/api"
+  },
+  "engines": {"node": ">=18.19.0"}
+}
