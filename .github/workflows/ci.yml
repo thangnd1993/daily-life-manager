@@ -95,4 +95,11 @@ jobs:
           cache: true
       - run: flutter pub get
       - run: flutter analyze
-      - run: flutter test
+      - name: Run flutter test
+        shell: bash
+        run: |
+          set +e
+          flutter test --reporter expanded 2>&1 | while IFS= read -r diagnostic; do
+            echo "::error title=Flutter test::$diagnostic"
+          done
+          exit "${PIPESTATUS[0]}"
