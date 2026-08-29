@@ -94,5 +94,16 @@ jobs:
           channel: stable
           cache: true
       - run: flutter pub get
-      - run: flutter analyze
+      - name: Run flutter analyze
+        run: |
+          set +e
+          analysis_output=$(flutter analyze 2>&1)
+          analysis_status=$?
+          echo "$analysis_output"
+          if [ "$analysis_status" -ne 0 ]; then
+            while IFS= read -r line; do
+              echo "::error::$line"
+            done <<< "$analysis_output"
+          fi
+          exit "$analysis_status"
       - run: flutter test
