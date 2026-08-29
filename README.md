@@ -1,8 +1,8 @@
 # Daily Life Manager
 
-Production-oriented multi-user personal management platform. Milestones 1–2 establish the monorepo, infrastructure,
-secure account/session APIs, authenticated mobile experience, and protected administrator portal. Milestone 3 user
-management is implemented pending final hosted verification. Personal management domains are not yet implemented.
+Production-oriented multi-user personal management platform. Milestones 1–3 establish the monorepo, infrastructure,
+secure account/session APIs, authenticated mobile experience, and protected administrator user management. Personal
+management domains are not yet implemented.
 
 ## Stack
 
@@ -54,5 +54,5 @@ read-only; status changes are guarded and disabling an account revokes its sessi
 
 ## Status
 
-Milestones 1 and 2 are complete. Milestone 3 is pending final verification. Attendance, finance, gold prices, alerts,
-notifications, and later product behavior remain pending.
+Milestones 1–3 are complete. Attendance, finance, gold prices, alerts, notifications, and later product behavior remain
+pending.
