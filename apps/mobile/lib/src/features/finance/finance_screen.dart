@@ -25,7 +25,9 @@ class _FinanceScreenState extends State<FinanceScreen> {
   }
 
   Future<void> _load() async {
-    if (mounted) setState(() { loading = true; error = null; });
+    if (mounted) {
+      setState(() { loading = true; error = null; });
+    }
     try {
       final results = await Future.wait([
         widget.api.financeSummary(month.year, month.month),
@@ -33,14 +35,18 @@ class _FinanceScreenState extends State<FinanceScreen> {
         widget.api.financeCategories(),
       ]);
       final page = results[1] as Map<String, dynamic>;
-      if (mounted) setState(() {
-        summary = results[0] as Map<String, dynamic>;
-        transactions = (page['items'] as List<dynamic>? ?? const []).cast<Map<String, dynamic>>();
-        categories = results[2] as List<Map<String, dynamic>>;
-        loading = false;
-      });
+      if (mounted) {
+        setState(() {
+          summary = results[0] as Map<String, dynamic>;
+          transactions = (page['items'] as List<dynamic>? ?? const []).cast<Map<String, dynamic>>();
+          categories = results[2] as List<Map<String, dynamic>>;
+          loading = false;
+        });
+      }
     } catch (_) {
-      if (mounted) setState(() { loading = false; error = 'Finance data could not be loaded.'; });
+      if (mounted) {
+        setState(() { loading = false; error = 'Finance data could not be loaded.'; });
+      }
     }
   }
 
@@ -64,7 +70,9 @@ class _FinanceScreenState extends State<FinanceScreen> {
       context: context,
       builder: (dialogContext) => StatefulBuilder(builder: (context, setDialogState) {
         final usable = categories.where((category) => category['type'] == type.value).toList();
-        if (!usable.any((category) => category['id'] == categoryId)) categoryId = usable.isEmpty ? null : usable.first['id'] as String;
+        if (!usable.any((category) => category['id'] == categoryId)) {
+          categoryId = usable.isEmpty ? null : usable.first['id'] as String;
+        }
         return AlertDialog(
           title: Text(transaction == null ? 'Add transaction' : 'Edit transaction'),
           content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -88,7 +96,9 @@ class _FinanceScreenState extends State<FinanceScreen> {
               subtitle: Text('${occurredAt.year}-${occurredAt.month.toString().padLeft(2, '0')}-${occurredAt.day.toString().padLeft(2, '0')}'),
               onTap: () async {
                 final date = await showDatePicker(context: context, firstDate: DateTime(2000), lastDate: DateTime(2100), initialDate: occurredAt);
-                if (date != null) setDialogState(() => occurredAt = DateTime(date.year, date.month, date.day, occurredAt.hour, occurredAt.minute));
+                if (date != null) {
+                  setDialogState(() => occurredAt = DateTime(date.year, date.month, date.day, occurredAt.hour, occurredAt.minute));
+                }
               },
             ),
           ])),
@@ -99,7 +109,9 @@ class _FinanceScreenState extends State<FinanceScreen> {
         );
       }),
     );
-    if (saved != true || categoryId == null) return;
+    if (saved != true || categoryId == null) {
+      return;
+    }
     final body = <String, dynamic>{'type': type.value, 'amount': amount.text, 'currency': 'VND', 'categoryId': categoryId, 'description': description.text, 'occurredAt': occurredAt.toUtc().toIso8601String()};
     try {
       if (transaction == null) {
@@ -109,7 +121,9 @@ class _FinanceScreenState extends State<FinanceScreen> {
       }
       await _load();
     } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Transaction could not be saved.')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Transaction could not be saved.')));
+      }
     } finally {
       type.dispose(); amount.dispose(); description.dispose();
     }
@@ -117,7 +131,10 @@ class _FinanceScreenState extends State<FinanceScreen> {
 
   Future<void> _deleteTransaction(Map<String, dynamic> transaction) async {
     final confirmed = await showDialog<bool>(context: context, builder: (context) => AlertDialog(title: const Text('Delete transaction?'), content: const Text('This action cannot be undone.'), actions: [TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')), FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Delete'))]));
-    if (confirmed == true) { await widget.api.deleteFinanceTransaction(transaction['id'] as String); await _load(); }
+    if (confirmed == true) {
+      await widget.api.deleteFinanceTransaction(transaction['id'] as String);
+      await _load();
+    }
   }
 
   Future<void> _manageCategories() async {
