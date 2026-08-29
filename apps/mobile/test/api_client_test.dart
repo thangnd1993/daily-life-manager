@@ -46,4 +46,26 @@ void main() {
     expect(store.tokens?.refreshToken, 'refresh-2');
     expect(profileCalls, 2);
   });
+
+  test('loads today, checks in, and loads monthly attendance', () async {
+    final requests = <http.Request>[];
+    final api = ApiClient(
+      tokenStore: MemoryStore(),
+      client: MockClient((request) async {
+        requests.add(request);
+        if (request.url.path.endsWith('/check-in')) {
+          return http.Response(jsonEncode({'id': 'attendance-1'}), 201);
+        }
+        if (request.url.path.endsWith('/today')) {
+          return http.Response(jsonEncode({'checkedIn': false, 'record': null}), 200);
+        }
+        return http.Response(jsonEncode({'items': [], 'checkedInDays': 0}), 200);
+      }),
+    );
+    expect((await api.attendanceToday('Asia/Ho_Chi_Minh'))['checkedIn'], false);
+    expect((await api.checkIn('Asia/Ho_Chi_Minh'))['id'], 'attendance-1');
+    expect((await api.attendanceMonth(2026, 8))['checkedInDays'], 0);
+    expect(requests.first.url.queryParameters['timezone'], 'Asia/Ho_Chi_Minh');
+    expect(jsonDecode(requests[1].body)['timezone'], 'Asia/Ho_Chi_Minh');
+  });
 }

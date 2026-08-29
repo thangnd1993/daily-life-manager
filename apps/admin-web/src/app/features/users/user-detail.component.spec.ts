@@ -18,11 +18,28 @@ const detail = {
 };
 
 describe('UserDetailComponent', () => {
-  const users = { detail: jest.fn(), updateStatus: jest.fn() };
+  const users = { detail: jest.fn(), updateStatus: jest.fn(), attendance: jest.fn() };
 
   beforeEach(async () => {
     users.detail.mockReset().mockReturnValue(of(detail));
     users.updateStatus.mockReset().mockReturnValue(of({ ...detail, status: 'SUSPENDED' }));
+    users.attendance.mockReset().mockReturnValue(
+      of({
+        items: [
+          {
+            id: 'attendance-1',
+            attendanceDate: '2026-08-29',
+            checkedInAt: '2026-08-29T01:00:00Z',
+            timezone: 'Asia/Ho_Chi_Minh',
+            source: 'MOBILE',
+            note: null,
+          },
+        ],
+        checkedInDays: 1,
+        year: 2026,
+        month: 8,
+      }),
+    );
     await TestBed.configureTestingModule({
       imports: [UserDetailComponent],
       providers: [
@@ -47,5 +64,25 @@ describe('UserDetailComponent', () => {
     const fixture = TestBed.createComponent(UserDetailComponent);
     fixture.detectChanges();
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('could not be loaded');
+  });
+
+  it('loads attendance and changes month without nested subscriptions', () => {
+    const fixture = TestBed.createComponent(UserDetailComponent);
+    fixture.detectChanges();
+    expect(users.attendance).toHaveBeenCalledWith('user-1', expect.any(Number), expect.any(Number));
+    fixture.componentInstance.changeAttendanceMonth(-1);
+    expect(users.attendance).toHaveBeenCalledTimes(2);
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('checked-in days');
+  });
+
+  it('renders attendance empty and error states', () => {
+    users.attendance.mockReturnValueOnce(of({ items: [], checkedInDays: 0, year: 2026, month: 8 }));
+    let fixture = TestBed.createComponent(UserDetailComponent);
+    fixture.detectChanges();
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('No check-ins');
+    users.attendance.mockReturnValueOnce(throwError(() => new Error('failed')));
+    fixture = TestBed.createComponent(UserDetailComponent);
+    fixture.detectChanges();
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Attendance could not be loaded');
   });
 });

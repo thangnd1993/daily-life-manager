@@ -29,6 +29,12 @@ class ApiClient {
         {'email': email, 'displayName': displayName, 'password': password, 'deviceName': 'Mobile'},
       );
   Future<Account> me() async => Account.fromJson(await request('GET', 'auth/me') as Map<String, dynamic>);
+  Future<Map<String, dynamic>> attendanceToday(String timezone) async =>
+      await request('GET', 'attendance/today?timezone=${Uri.encodeQueryComponent(timezone)}') as Map<String, dynamic>;
+  Future<Map<String, dynamic>> checkIn(String timezone) async =>
+      await request('POST', 'attendance/check-in', body: {'timezone': timezone}) as Map<String, dynamic>;
+  Future<Map<String, dynamic>> attendanceMonth(int year, int month) async =>
+      await request('GET', 'attendance?year=$year&month=$month&pageSize=31') as Map<String, dynamic>;
 
   Future<void> logout() async {
     try {

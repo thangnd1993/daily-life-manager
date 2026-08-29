@@ -33,3 +33,17 @@ export interface UsersQuery {
   sortBy: 'createdAt' | 'updatedAt' | 'lastLoginAt' | 'email' | 'displayName';
   sortDirection: 'asc' | 'desc';
 }
+
+export interface AttendancePage {
+  items: Array<{
+    id: string;
+    attendanceDate: string;
+    checkedInAt: string;
+    timezone: string;
+    source: string;
+    note: string | null;
+  }>;
+  checkedInDays: number;
+  year: number;
+  month: number;
+}

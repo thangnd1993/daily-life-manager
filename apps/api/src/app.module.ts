@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AdminUsersModule } from './admin-users/admin-users.module';
+import { AttendanceModule } from './attendance/attendance.module';
 import { AuthModule } from './auth/auth.module';
 import { appConfig } from './config/app.config';
 import { environmentSchema } from './config/environment.validation';
@@ -24,6 +25,7 @@ import { QueueModule } from './queue/queue.module';
     HealthModule,
     AuthModule,
     AdminUsersModule,
+    AttendanceModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

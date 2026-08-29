@@ -98,6 +98,40 @@
           <p class="feedback" aria-live="polite">{{ feedback }}</p>
         }
       </section>
+
+      <section class="glass status-panel">
+        <div class="attendance-heading">
+          <div>
+            <h2>Attendance</h2>
+            <p>Read-only monthly check-in history.</p>
+          </div>
+          <div class="actions">
+            <button type="button" (click)="changeAttendanceMonth(-1)">Previous</button
+            ><button type="button" (click)="changeAttendanceMonth(1)">Next</button>
+          </div>
+        </div>
+        @if (attendance$ | async; as attendance) {
+          @if (attendance.loading) {
+            <p>Loading attendance…</p>
+          } @else if (attendance.error) {
+            <p class="error">Attendance could not be loaded.</p>
+          } @else if (!attendance.data?.items?.length) {
+            <p>No check-ins for this month.</p>
+          } @else {
+            <p>
+              <strong>{{ attendance.data?.checkedInDays }}</strong> checked-in days
+            </p>
+            @for (record of attendance.data?.items; track record.id) {
+              <dl>
+                <div>
+                  <dt>{{ record.attendanceDate | date: 'mediumDate' }}</dt>
+                  <dd>{{ record.checkedInAt | date: 'shortTime' }} · {{ record.timezone }} · {{ record.source }}</dd>
+                </div>
+              </dl>
+            }
+          }
+        }
+      </section>
     }
   }
 }

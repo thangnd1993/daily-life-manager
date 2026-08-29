@@ -23,5 +23,9 @@ Admin user management uses both JWT and role guards. Safe Prisma projections exc
 Administrators cannot disable themselves or the final active administrator; deactivation and suspension transactionally
 revoke active sessions. There is no hard-delete endpoint or public role mutation.
 
+Attendance check-in trusts server time, validates the IANA timezone, and stores a normalized local date with the actual
+UTC timestamp. A database unique constraint prevents concurrent duplicate daily check-ins. User history always scopes by
+the authenticated subject; cross-user inspection is isolated behind the ADMIN guard and has no mutation endpoints.
+
 Money will use integer minor units or database decimals, never floating point. Secrets belong in deployment secret stores,
 not Git. Logs must omit passwords, tokens, personal financial data, and device credentials. Push credentials are deferred.

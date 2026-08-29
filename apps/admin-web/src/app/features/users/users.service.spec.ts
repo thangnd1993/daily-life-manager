@@ -46,4 +46,14 @@ describe('UsersService', () => {
     expect(request.request.body).toEqual({ status: 'SUSPENDED' });
     request.flush({ id: 'user-1', status: 'SUSPENDED' });
   });
+
+  it('maps selected-user attendance month parameters', () => {
+    service.attendance('user-1', 2026, 8).subscribe();
+    const request = http.expectOne(
+      (candidate) => candidate.url === 'admin/users/user-1/attendance' && candidate.params.get('month') === '8',
+    );
+    expect(request.request.params.get('year')).toBe('2026');
+    expect(request.request.params.get('pageSize')).toBe('31');
+    request.flush({ items: [], checkedInDays: 0, year: 2026, month: 8 });
+  });
 });

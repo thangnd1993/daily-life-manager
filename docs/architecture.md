@@ -39,3 +39,9 @@ reload persistence for reduced XSS exposure, and requires an explicit `ADMIN` gu
 server-side pagination, search, filters, and allow-listed deterministic sorting. Detail projections return safe account
 fields and active-session counts only. Role remains read-only. The Angular Users list and detail routes consume these
 operations with debounced filters and guarded lazy routes.
+
+## Daily attendance
+
+Attendance belongs to a user and is uniquely constrained by user and normalized local date. The API derives that date
+from server time using a validated IANA timezone; clients cannot submit arbitrary attendance dates. User endpoints expose
+today, check-in, and monthly history, while the explicit ADMIN route provides read-only selected-user inspection.

@@ -33,6 +33,16 @@ export class UserDetailComponent {
   pendingStatus: UserStatus | null = null;
   saving = false;
   feedback = '';
+  readonly attendanceMonth = new BehaviorSubject({ year: new Date().getFullYear(), month: new Date().getMonth() + 1 });
+  readonly attendance$ = this.attendanceMonth.pipe(
+    switchMap(({ year, month }) =>
+      this.users.attendance(this.route.snapshot.paramMap.get('id') ?? '', year, month).pipe(
+        map((data) => ({ loading: false, data, error: false })),
+        startWith({ loading: true, data: null, error: false }),
+        catchError(() => of({ loading: false, data: null, error: true })),
+      ),
+    ),
+  );
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -67,5 +77,11 @@ export class UserDetailComponent {
 
   retry(): void {
     this.reloadState.next(this.reloadState.value + 1);
+  }
+
+  changeAttendanceMonth(offset: number): void {
+    const current = this.attendanceMonth.value;
+    const date = new Date(current.year, current.month - 1 + offset, 1);
+    this.attendanceMonth.next({ year: date.getFullYear(), month: date.getMonth() + 1 });
   }
 }

@@ -4,6 +4,10 @@ Production-oriented multi-user personal management platform. Milestones 1–3 es
 secure account/session APIs, authenticated mobile experience, and protected administrator user management. Personal
 management domains are not yet implemented.
 
+Daily attendance lets an authenticated user check in once per server-trusted local calendar date, view the current
+state and monthly history, and lets administrators inspect a selected user's read-only history. Mobile timezone is
+configured with the `TIMEZONE` Dart define and must be a valid IANA identifier.
+
 ## Stack
 
 - NestJS, TypeScript, Prisma, PostgreSQL

@@ -25,6 +25,12 @@ enum UserStatus {
   SUSPENDED
 }
 
+enum AttendanceSource {
+  MOBILE
+  WEB
+  ADMIN
+}
+
 model User {
   id                  String               @id @default(cuid())
   email               String               @unique
@@ -38,8 +44,25 @@ model User {
   updatedAt           DateTime             @updatedAt
   authSessions        AuthSession[]
   passwordResetTokens PasswordResetToken[]
+  attendances         Attendance[]
 
   @@index([status])
+}
+
+model Attendance {
+  id             String           @id @default(cuid())
+  userId         String
+  attendanceDate DateTime         @db.Date
+  checkedInAt    DateTime         @default(now())
+  timezone       String
+  source         AttendanceSource
+  note           String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, attendanceDate])
+  @@index([userId, attendanceDate(sort: Desc)])
 }
 
 model AuthSession {

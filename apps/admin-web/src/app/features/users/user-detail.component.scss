@@ -132,6 +132,11 @@ button:disabled {
   color: var(--accent);
   font-weight: 700;
 }
+.attendance-heading {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
 .status {
   border-radius: 999px;
   display: inline-flex;

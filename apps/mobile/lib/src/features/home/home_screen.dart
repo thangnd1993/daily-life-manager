@@ -1,17 +1,77 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../auth/auth_controller.dart';
+import '../../config/app_config.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({required this.auth, super.key});
   final AuthController auth;
   @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  bool loading = true;
+  bool checkedIn = false;
+  String? checkedInAt;
+  String? error;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final result = await widget.auth.api.attendanceToday(AppConfig.timezone);
+      if (mounted) setState(() { checkedIn = result['checkedIn'] == true; checkedInAt = result['record']?['checkedInAt'] as String?; loading = false; error = null; });
+    } catch (_) {
+      if (mounted) setState(() { loading = false; error = 'Attendance could not be loaded.'; });
+    }
+  }
+
+  Future<void> _checkIn() async {
+    setState(() => loading = true);
+    try {
+      await widget.auth.api.checkIn(AppConfig.timezone);
+      await _load();
+    } catch (_) {
+      if (mounted) setState(() { loading = false; error = 'Check-in was not completed.'; });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Daily Life Manager')),
-        body: Center(child: Text('Welcome, ${auth.account?.displayName ?? 'User'}')),
+        backgroundColor: const Color(0xffeef4fb),
+        appBar: AppBar(backgroundColor: Colors.transparent, title: const Text('Daily Life Manager')),
+        body: ListView(padding: const EdgeInsets.all(20), children: [
+          Text('Hello, ${widget.auth.account?.displayName ?? 'User'}', style: Theme.of(context).textTheme.headlineMedium),
+          const SizedBox(height: 20),
+          Card(
+            elevation: 0,
+            color: Colors.white.withOpacity(.74),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28), side: const BorderSide(color: Colors.white)),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: loading
+                  ? const Center(child: CircularProgressIndicator())
+                  : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text(checkedIn ? 'Checked in today' : 'Ready for today?', style: Theme.of(context).textTheme.headlineSmall),
+                      const SizedBox(height: 8),
+                      Text(checkedIn ? 'Recorded at ${checkedInAt ?? ''}' : 'One tap records your local attendance.'),
+                      const SizedBox(height: 18),
+                      FilledButton.icon(onPressed: checkedIn ? null : _checkIn, icon: const Icon(Icons.touch_app), label: Text(checkedIn ? 'Complete' : 'Check In')),
+                      const SizedBox(height: 8),
+                      Text(AppConfig.timezone),
+                    ]),
+            ),
+          ),
+          if (error != null) Padding(padding: const EdgeInsets.all(12), child: Text(error!, style: const TextStyle(color: Colors.red))),
+        ]),
         persistentFooterButtons: [
           TextButton(onPressed: () => context.go('/change-password'), child: const Text('Change password')),
-          TextButton(onPressed: auth.logout, child: const Text('Sign out')),
+          TextButton(onPressed: widget.auth.logout, child: const Text('Sign out')),
         ],
       );
 }
