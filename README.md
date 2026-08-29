@@ -51,5 +51,5 @@ can bootstrap `ADMIN` during this milestone.
 
 ## Status
 
-Milestone 1 is complete and Milestone 2 authentication is implemented pending final verification. User administration,
+Milestones 1 and 2 are complete. User administration,
 attendance, finance, gold prices, alerts, notifications, and later product behavior remain pending.
