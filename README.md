@@ -58,5 +58,4 @@ read-only; status changes are guarded and disabling an account revokes its sessi
 
 ## Status
 
-Milestones 1–3 are complete. Attendance, finance, gold prices, alerts, notifications, and later product behavior remain
-pending.
+Milestones 1–4 are complete. Finance, gold prices, alerts, notifications, and later product behavior remain pending.
