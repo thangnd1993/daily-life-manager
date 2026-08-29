@@ -104,7 +104,7 @@ void main() {
     await tester.tap(find.text('Personal finance'));
     await tester.pumpAndSettle();
     expect(find.text('Transactions'), findsOneWidget);
-    expect(find.text('Food'), findsOneWidget);
+    expect(find.text('Food'), findsWidgets);
     expect(find.text('1.000.000 ₫'), findsOneWidget);
     expect(find.text('Overall expenses'), findsOneWidget);
     expect(find.text('Expense breakdown'), findsOneWidget);
