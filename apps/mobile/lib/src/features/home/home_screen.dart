@@ -63,7 +63,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       const SizedBox(height: 18),
                       FilledButton.icon(onPressed: checkedIn ? null : _checkIn, icon: const Icon(Icons.touch_app), label: Text(checkedIn ? 'Complete' : 'Check In')),
                       const SizedBox(height: 8),
-                      Text(AppConfig.timezone),
+                      const Text(AppConfig.timezone),
                     ]),
             ),
           ),
