@@ -94,5 +94,12 @@ jobs:
           channel: stable
           cache: true
       - run: flutter pub get
-      - run: flutter analyze
+      - name: Run flutter analyze
+        shell: bash
+        run: |
+          set +e
+          flutter analyze --machine 2>&1 | while IFS= read -r diagnostic; do
+            echo "::error title=Flutter analyzer::$diagnostic"
+          done
+          exit "${PIPESTATUS[0]}"
       - run: flutter test
