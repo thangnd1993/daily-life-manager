@@ -62,5 +62,5 @@ read-only; status changes are guarded and disabling an account revokes its sessi
 
 ## Status
 
-Milestones 1–4 are complete. Milestone 5 is implemented and awaiting final hosted CI confirmation. Budgets, analytics,
-gold prices, alerts, notifications, and later product behavior remain pending.
+Milestones 1–5 are complete. Budgets, analytics, gold prices, alerts, notifications, and later product behavior remain
+pending.

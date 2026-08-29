@@ -4,7 +4,7 @@
 - [x] Milestone 2 — Authentication and account foundation
 - [x] Milestone 3 — Admin user management
 - [x] Milestone 4 — Daily attendance
-- [ ] Milestone 5 — Personal finance core
+- [x] Milestone 5 — Personal finance core
 - [ ] Milestone 6 — Budgets and finance analytics
 - [ ] Milestone 7 — Gold price provider integration
 - [ ] Milestone 8 — Gold alerts and background jobs
@@ -16,5 +16,5 @@
 - [ ] Milestone 14 — Production Docker and deployment preparation
 - [ ] Milestone 15 — iOS and Android release preparation
 
-Milestones 1–4 are complete. GitHub-hosted CI verifies the API with PostgreSQL and Redis, the authenticated Angular admin
-portal, and the Flutter application. Milestone 5 and all later milestones remain pending.
+Milestones 1–5 are complete. GitHub-hosted CI verifies the API with PostgreSQL and Redis, the authenticated Angular admin
+portal, and the Flutter application. Milestone 6 and all later milestones remain pending.
