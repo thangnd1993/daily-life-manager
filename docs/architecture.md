@@ -32,3 +32,10 @@ an isolated capture adapter.
 Flutter persists credentials only through platform Keychain/Keystore secure storage. Its client serializes refresh work,
 retries a protected request once, and clears auth state on failure. Angular keeps credentials only in memory, trading
 reload persistence for reduced XSS exposure, and requires an explicit `ADMIN` guard for its dashboard.
+
+## Admin user management
+
+`AdminUsersModule` exposes authenticated, explicit `ADMIN`-only list, detail, and status-update operations. Lists use
+server-side pagination, search, filters, and allow-listed deterministic sorting. Detail projections return safe account
+fields and active-session counts only. Role remains read-only. The Angular Users list and detail routes consume these
+operations with debounced filters and guarded lazy routes.

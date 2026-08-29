@@ -19,5 +19,9 @@ session, ownership, or role enforcement.
 Future domain work must scope every user-owned backend query by the authenticated user ID and use explicit admin
 permissions for cross-user access. Audit logging remains a later authorized milestone.
 
+Admin user management uses both JWT and role guards. Safe Prisma projections exclude password and token material.
+Administrators cannot disable themselves or the final active administrator; deactivation and suspension transactionally
+revoke active sessions. There is no hard-delete endpoint or public role mutation.
+
 Money will use integer minor units or database decimals, never floating point. Secrets belong in deployment secret stores,
 not Git. Logs must omit passwords, tokens, personal financial data, and device credentials. Push credentials are deferred.

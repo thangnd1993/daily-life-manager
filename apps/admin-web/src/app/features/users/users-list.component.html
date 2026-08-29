@@ -1,0 +1,84 @@
+<section class="page-header">
+  <div>
+    <p class="eyebrow">Account control</p>
+    <h1>Users</h1>
+    <p>Review account access, activity, and status without exposing credentials.</p>
+  </div>
+</section>
+
+<section class="glass toolbar" aria-label="User filters">
+  <label>
+    <span>Search</span>
+    <input [formControl]="search" type="search" placeholder="Email or display name" (input)="resetPage()" />
+  </label>
+  <label>
+    <span>Role</span>
+    <select [formControl]="role" (change)="resetPage()">
+      <option value="">All roles</option>
+      <option value="USER">User</option>
+      <option value="ADMIN">Admin</option>
+    </select>
+  </label>
+  <label>
+    <span>Status</span>
+    <select [formControl]="status" (change)="resetPage()">
+      <option value="">All statuses</option>
+      <option value="ACTIVE">Active</option>
+      <option value="INACTIVE">Inactive</option>
+      <option value="SUSPENDED">Suspended</option>
+    </select>
+  </label>
+</section>
+
+@if (state$ | async; as state) {
+  <section class="glass table-surface" aria-live="polite">
+    @if (state.loading) {
+      <div class="state"><span class="spinner" aria-hidden="true"></span>Loading accounts…</div>
+    } @else if (state.error) {
+      <div class="state error">
+        <strong>Users could not be loaded.</strong>
+        <button type="button" (click)="retry()">Try again</button>
+      </div>
+    } @else if (!state.data?.items?.length) {
+      <div class="state"><strong>No users match these filters.</strong><span>Try a broader search.</span></div>
+    } @else {
+      @if (state.data; as data) {
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th><button type="button" (click)="sortBy('displayName')">User</button></th>
+                <th><button type="button" (click)="sortBy('email')">Email</button></th>
+                <th>Role</th>
+                <th>Status</th>
+                <th><button type="button" (click)="sortBy('lastLoginAt')">Last login</button></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (user of data.items; track user.id) {
+                <tr>
+                  <td>
+                    <a [routerLink]="['/users', user.id]">{{ user.displayName }}</a>
+                  </td>
+                  <td>{{ user.email }}</td>
+                  <td>{{ user.role }}</td>
+                  <td>
+                    <span class="status" [class]="'status ' + user.status.toLowerCase()">{{ user.status }}</span>
+                  </td>
+                  <td>{{ user.lastLoginAt ? (user.lastLoginAt | date: 'medium') : 'Never' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <footer class="pagination">
+          <span>{{ data.totalItems }} accounts · Page {{ data.page }} of {{ data.totalPages || 1 }}</span>
+          <div>
+            <button type="button" [disabled]="data.page <= 1" (click)="page(data.page - 1)">Previous</button>
+            <button type="button" [disabled]="data.page >= data.totalPages" (click)="page(data.page + 1)">Next</button>
+          </div>
+        </footer>
+      }
+    }
+  </section>
+}

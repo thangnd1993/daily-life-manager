@@ -1,8 +1,8 @@
 # Daily Life Manager
 
 Production-oriented multi-user personal management platform. Milestones 1–2 establish the monorepo, infrastructure,
-secure account/session APIs, authenticated mobile experience, and protected administrator portal. Personal management
-domains are not yet implemented.
+secure account/session APIs, authenticated mobile experience, and protected administrator portal. Milestone 3 user
+management is implemented pending final hosted verification. Personal management domains are not yet implemented.
 
 ## Stack
 
@@ -42,6 +42,9 @@ The auth API provides registration, login, refresh rotation, logout, current pro
 reset request/consumption under `/api/auth`. Public registration always creates `USER`; only the environment-driven seed
 can bootstrap `ADMIN` during this milestone.
 
+Authenticated administrators manage accounts under `/api/admin/users` and the Admin portal Users screens. Role is
+read-only; status changes are guarded and disabling an account revokes its sessions.
+
 ## Quality commands
 
 - API: `npm run format`, `npm run lint`, `npm test`, `npm run build`, `npm run prisma:generate`
@@ -51,5 +54,5 @@ can bootstrap `ADMIN` during this milestone.
 
 ## Status
 
-Milestones 1 and 2 are complete. User administration,
-attendance, finance, gold prices, alerts, notifications, and later product behavior remain pending.
+Milestones 1 and 2 are complete. Milestone 3 is pending final verification. Attendance, finance, gold prices, alerts,
+notifications, and later product behavior remain pending.

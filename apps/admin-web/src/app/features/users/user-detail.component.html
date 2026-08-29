@@ -1,0 +1,103 @@
+<a class="back" routerLink="/users">← Back to users</a>
+@if (state$ | async; as state) {
+  @if (state.loading) {
+    <section class="glass state" aria-live="polite">Loading account…</section>
+  } @else if (state.error) {
+    <section class="glass state error" aria-live="polite">
+      <strong>Account details could not be loaded.</strong>
+      <button type="button" (click)="retry()">Try again</button>
+    </section>
+  } @else {
+    @if (state.user; as user) {
+      <header class="detail-header">
+        <div>
+          <p class="eyebrow">User account</p>
+          <h1>{{ user.displayName }}</h1>
+          <p>{{ user.email }}</p>
+        </div>
+        <span class="status" [class]="'status ' + user.status.toLowerCase()">{{ user.status }}</span>
+      </header>
+
+      <div class="detail-grid">
+        <section class="glass card">
+          <h2>Account</h2>
+          <dl>
+            <div>
+              <dt>Role</dt>
+              <dd>{{ user.role }}</dd>
+            </div>
+            <div>
+              <dt>Email verification</dt>
+              <dd>{{ user.emailVerifiedAt ? 'Verified' : 'Not verified' }}</dd>
+            </div>
+            <div>
+              <dt>Active sessions</dt>
+              <dd>{{ user.activeSessionCount }}</dd>
+            </div>
+            <div>
+              <dt>Last login</dt>
+              <dd>{{ user.lastLoginAt ? (user.lastLoginAt | date: 'medium') : 'Never' }}</dd>
+            </div>
+          </dl>
+        </section>
+        <section class="glass card">
+          <h2>Timeline</h2>
+          <dl>
+            <div>
+              <dt>Created</dt>
+              <dd>{{ user.createdAt | date: 'medium' }}</dd>
+            </div>
+            <div>
+              <dt>Updated</dt>
+              <dd>{{ user.updatedAt | date: 'medium' }}</dd>
+            </div>
+            <div>
+              <dt>User ID</dt>
+              <dd class="mono">{{ user.id }}</dd>
+            </div>
+          </dl>
+        </section>
+      </div>
+
+      <section class="glass status-panel">
+        <div>
+          <h2>Account status</h2>
+          <p>Disabling an account immediately revokes its active sessions. Role is read-only.</p>
+        </div>
+        <div class="actions" aria-label="Change account status">
+          <button type="button" [disabled]="user.status === 'ACTIVE'" (click)="requestStatus('ACTIVE')">
+            Activate
+          </button>
+          <button type="button" [disabled]="user.status === 'INACTIVE'" (click)="requestStatus('INACTIVE')">
+            Deactivate
+          </button>
+          <button
+            class="danger"
+            type="button"
+            [disabled]="user.status === 'SUSPENDED'"
+            (click)="requestStatus('SUSPENDED')"
+          >
+            Suspend
+          </button>
+        </div>
+        @if (pendingStatus) {
+          <div class="confirmation" role="alertdialog" aria-labelledby="confirm-title">
+            <div>
+              <strong id="confirm-title">Confirm status change</strong>
+              <p>Set {{ user.displayName }} to {{ pendingStatus }}?</p>
+            </div>
+            <div class="actions">
+              <button type="button" [disabled]="saving" (click)="cancelStatus()">Cancel</button>
+              <button class="primary" type="button" [disabled]="saving" (click)="confirmStatus(user)">
+                {{ saving ? 'Updating…' : 'Confirm' }}
+              </button>
+            </div>
+          </div>
+        }
+        @if (feedback) {
+          <p class="feedback" aria-live="polite">{{ feedback }}</p>
+        }
+      </section>
+    }
+  }
+}
