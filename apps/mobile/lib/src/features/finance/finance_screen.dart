@@ -36,7 +36,7 @@ class _FinanceScreenState extends State<FinanceScreen> {
       if (mounted) setState(() {
         summary = results[0] as Map<String, dynamic>;
         transactions = (page['items'] as List<dynamic>? ?? const []).cast<Map<String, dynamic>>();
-        categories = (results[2] as List<Map<String, dynamic>>);
+        categories = results[2] as List<Map<String, dynamic>>;
         loading = false;
       });
     } catch (_) {
@@ -75,7 +75,8 @@ class _FinanceScreenState extends State<FinanceScreen> {
             ),
             TextField(controller: amount, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Amount (VND)')),
             DropdownButtonFormField<String>(
-              value: categoryId,
+              key: ValueKey(type.value),
+              initialValue: categoryId,
               decoration: const InputDecoration(labelText: 'Category'),
               items: usable.map((category) => DropdownMenuItem(value: category['id'] as String, child: Text(category['name'] as String))).toList(),
               onChanged: (value) => categoryId = value,
@@ -182,7 +183,7 @@ class _FinanceCategoriesScreenState extends State<FinanceCategoriesScreen> {
   Future<void> _edit([Map<String, dynamic>? category]) async {
     final name = TextEditingController(text: category?['name'] as String? ?? '');
     String type = category?['type'] as String? ?? 'EXPENSE';
-    final saved = await showDialog<bool>(context: context, builder: (context) => StatefulBuilder(builder: (context, setState) => AlertDialog(title: Text(category == null ? 'New category' : 'Rename category'), content: Column(mainAxisSize: MainAxisSize.min, children: [TextField(controller: name, decoration: const InputDecoration(labelText: 'Name')), if (category == null) DropdownButtonFormField<String>(value: type, items: const [DropdownMenuItem(value: 'EXPENSE', child: Text('Expense')), DropdownMenuItem(value: 'INCOME', child: Text('Income'))], onChanged: (value) => setState(() => type = value!))]), actions: [TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')), FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Save'))])));
+    final saved = await showDialog<bool>(context: context, builder: (context) => StatefulBuilder(builder: (context, setState) => AlertDialog(title: Text(category == null ? 'New category' : 'Rename category'), content: Column(mainAxisSize: MainAxisSize.min, children: [TextField(controller: name, decoration: const InputDecoration(labelText: 'Name')), if (category == null) DropdownButtonFormField<String>(initialValue: type, items: const [DropdownMenuItem(value: 'EXPENSE', child: Text('Expense')), DropdownMenuItem(value: 'INCOME', child: Text('Income'))], onChanged: (value) => setState(() => type = value!))]), actions: [TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')), FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Save'))])));
     if (saved == true && name.text.trim().isNotEmpty) { if (category == null) { await widget.api.createFinanceCategory(name.text.trim(), type); } else { await widget.api.updateFinanceCategory(category['id'] as String, name.text.trim()); } await _load(); }
     name.dispose();
   }
