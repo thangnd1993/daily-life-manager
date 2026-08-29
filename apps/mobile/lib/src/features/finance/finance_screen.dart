@@ -207,7 +207,7 @@ class _FinanceScreenState extends State<FinanceScreen> {
           LinearProgressIndicator(value: ((budget['percentageUsed'] as num).toDouble() / 100).clamp(0, 1).toDouble(), color: budget['exceeded'] == true ? Colors.red : Colors.blue),
           const SizedBox(height: 6),
           Text(budget['exceeded'] == true ? 'Budget exceeded by ${_money((BigInt.parse(budget['remainingAmount'] as String).abs()).toString())}' : '${_money(budget['remainingAmount'])} remaining'),
-        ]))),
+        ])))),
         const SizedBox(height: 24),
         Text('Expense breakdown', style: Theme.of(context).textTheme.titleLarge),
         ..._expenseBreakdown.map((item) => Padding(padding: const EdgeInsets.symmetric(vertical: 6), child: Column(children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text((item['category'] as Map<String, dynamic>)['name'] as String), Text('${item['percentage']}% · ${_money(item['amount'])}')]), const SizedBox(height: 4), LinearProgressIndicator(value: (item['percentage'] as num).toDouble() / 100)]))),
