@@ -176,6 +176,12 @@ class _FinanceScreenState extends State<FinanceScreen> {
     await _load();
   }
 
+  List<Map<String, dynamic>> get _expenseBreakdown =>
+      (analytics['expenseByCategory'] as List<dynamic>? ?? const []).cast<Map<String, dynamic>>();
+
+  List<Map<String, dynamic>> get _trend =>
+      (analytics['trend'] as List<dynamic>? ?? const []).cast<Map<String, dynamic>>();
+
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: const Color(0xffeef4fb),
@@ -204,10 +210,10 @@ class _FinanceScreenState extends State<FinanceScreen> {
         ]))),
         const SizedBox(height: 24),
         Text('Expense breakdown', style: Theme.of(context).textTheme.titleLarge),
-        ...((analytics['expenseByCategory'] as List<dynamic>? ?? const []).cast<Map<String, dynamic>>()).map((item) => Padding(padding: const EdgeInsets.symmetric(vertical: 6), child: Column(children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text((item['category'] as Map<String, dynamic>)['name'] as String), Text('${item['percentage']}% · ${_money(item['amount'])}')]), const SizedBox(height: 4), LinearProgressIndicator(value: (item['percentage'] as num).toDouble() / 100)]))),
+        ..._expenseBreakdown.map((item) => Padding(padding: const EdgeInsets.symmetric(vertical: 6), child: Column(children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text((item['category'] as Map<String, dynamic>)['name'] as String), Text('${item['percentage']}% · ${_money(item['amount'])}')]), const SizedBox(height: 4), LinearProgressIndicator(value: (item['percentage'] as num).toDouble() / 100)]))),
         const SizedBox(height: 24),
         Text('Six-month trend', style: Theme.of(context).textTheme.titleLarge),
-        ...((analytics['trend'] as List<dynamic>? ?? const []).cast<Map<String, dynamic>>()).map((point) => ListTile(contentPadding: EdgeInsets.zero, title: Text('${point['month']}/${point['year']}'), subtitle: Text('Income ${_money(point['totalIncome'])}'), trailing: Text('Expense ${_money(point['totalExpense'])}'))),
+        ..._trend.map((point) => ListTile(contentPadding: EdgeInsets.zero, title: Text('${point['month']}/${point['year']}'), subtitle: Text('Income ${_money(point['totalIncome'])}'), trailing: Text('Expense ${_money(point['totalExpense'])}'))),
         const SizedBox(height: 24),
         Text('Transactions', style: Theme.of(context).textTheme.titleLarge),
         if (transactions.isEmpty) const Padding(padding: EdgeInsets.symmetric(vertical: 24), child: Text('No transactions for this month.')),
