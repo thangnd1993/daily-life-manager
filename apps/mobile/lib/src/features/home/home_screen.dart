@@ -15,6 +15,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool checkedIn = false;
   String? checkedInAt;
   String? error;
+  List<Map<String, dynamic>> monthRecords = const [];
 
   @override
   void initState() {
@@ -24,8 +25,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _load() async {
     try {
-      final result = await widget.auth.api.attendanceToday(AppConfig.timezone);
-      if (mounted) setState(() { checkedIn = result['checkedIn'] == true; checkedInAt = result['record']?['checkedInAt'] as String?; loading = false; error = null; });
+      final now = DateTime.now();
+      final results = await Future.wait([
+        widget.auth.api.attendanceToday(AppConfig.timezone),
+        widget.auth.api.attendanceMonth(now.year, now.month),
+      ]);
+      final items = results[1]['items'] as List<dynamic>? ?? const [];
+      if (mounted) setState(() { checkedIn = results[0]['checkedIn'] == true; checkedInAt = results[0]['record']?['checkedInAt'] as String?; monthRecords = items.cast<Map<String, dynamic>>(); loading = false; error = null; });
     } catch (_) {
       if (mounted) setState(() { loading = false; error = 'Attendance could not be loaded.'; });
     }
@@ -68,6 +74,20 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           if (error != null) Padding(padding: const EdgeInsets.all(12), child: Text(error!, style: const TextStyle(color: Colors.red))),
+          const SizedBox(height: 20),
+          Text('This month · ${monthRecords.length} days', style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 8),
+          if (!loading && monthRecords.isEmpty)
+            const Text('No earlier check-ins this month.')
+          else
+            ...monthRecords.take(7).map(
+                  (record) => ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.check_circle_outline),
+                    title: Text(record['attendanceDate'] as String),
+                    subtitle: Text('${record['timezone']} · ${record['source']}'),
+                  ),
+                ),
         ]),
         persistentFooterButtons: [
           TextButton(onPressed: () => context.go('/change-password'), child: const Text('Change password')),

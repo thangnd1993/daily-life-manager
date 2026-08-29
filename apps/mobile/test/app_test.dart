@@ -34,10 +34,22 @@ void main() {
       tokenStore: MemoryTokenStore(),
       client: MockClient(
         (request) async => http.Response(
-          jsonEncode({
-            'checkedIn': true,
-            'record': {'checkedInAt': '2026-08-29T01:00:00Z'},
-          }),
+          jsonEncode(
+            request.url.path.endsWith('/today')
+                ? {
+                    'checkedIn': true,
+                    'record': {'checkedInAt': '2026-08-29T01:00:00Z'},
+                  }
+                : {
+                    'items': [
+                      {
+                        'attendanceDate': '2026-08-29',
+                        'timezone': 'Asia/Ho_Chi_Minh',
+                        'source': 'MOBILE',
+                      },
+                    ],
+                  },
+          ),
           200,
         ),
       ),
@@ -56,5 +68,6 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Checked in today'), findsOneWidget);
     expect(find.text('Complete'), findsOneWidget);
+    expect(find.textContaining('This month · 1 days'), findsOneWidget);
   });
 }
