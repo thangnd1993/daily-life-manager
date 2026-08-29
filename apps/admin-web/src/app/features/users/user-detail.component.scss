@@ -162,6 +162,36 @@ button:disabled {
   justify-content: flex-end;
   margin-top: 1rem;
 }
+.budget-grid,
+.trend-grid {
+  display: grid;
+  gap: 0.65rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 1rem 0;
+}
+.budget-grid div,
+.trend-grid div {
+  background: rgba(255, 255, 255, 0.52);
+  border-radius: 14px;
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.8rem;
+}
+.budget-grid span,
+.budget-grid small,
+.trend-grid span {
+  color: var(--muted);
+}
+.budget-exceeded {
+  border: 1px solid rgba(162, 44, 37, 0.35);
+}
+.breakdown-row {
+  align-items: center;
+  border-top: 1px solid rgba(80, 105, 135, 0.12);
+  display: flex;
+  justify-content: space-between;
+  padding: 0.65rem 0;
+}
 .status {
   border-radius: 999px;
   display: inline-flex;
@@ -212,6 +242,10 @@ button:disabled {
     text-align: left;
   }
   .finance-summary {
+    grid-template-columns: 1fr;
+  }
+  .budget-grid,
+  .trend-grid {
     grid-template-columns: 1fr;
   }
 }

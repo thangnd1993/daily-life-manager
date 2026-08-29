@@ -41,6 +41,17 @@ class ApiClient {
       await request('GET', 'finance/summary?year=$year&month=$month') as Map<String, dynamic>;
   Future<Map<String, dynamic>> financeTransactions(int year, int month, {int page = 1}) async =>
       await request('GET', 'finance/transactions?year=$year&month=$month&page=$page&pageSize=20') as Map<String, dynamic>;
+  Future<List<Map<String, dynamic>>> financeBudgets(int year, int month) async =>
+      (await request('GET', 'finance/budgets?year=$year&month=$month') as List<dynamic>).cast<Map<String, dynamic>>();
+  Future<Map<String, dynamic>> financeAnalytics(int year, int month) async =>
+      await request('GET', 'finance/analytics?year=$year&month=$month') as Map<String, dynamic>;
+  Future<Map<String, dynamic>> upsertFinanceBudget(Map<String, dynamic> body) async =>
+      await request('POST', 'finance/budgets', body: body) as Map<String, dynamic>;
+  Future<Map<String, dynamic>> updateFinanceBudget(String id, String amount) async =>
+      await request('PATCH', 'finance/budgets/$id', body: {'amount': amount}) as Map<String, dynamic>;
+  Future<void> deleteFinanceBudget(String id) async {
+    await request('DELETE', 'finance/budgets/$id');
+  }
   Future<Map<String, dynamic>> createFinanceTransaction(Map<String, dynamic> body) async =>
       await request('POST', 'finance/transactions', body: body) as Map<String, dynamic>;
   Future<Map<String, dynamic>> updateFinanceTransaction(String id, Map<String, dynamic> body) async =>

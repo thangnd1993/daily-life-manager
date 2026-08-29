@@ -2,7 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { UserStatus } from '../../core/auth/auth.models';
-import { AdminUserDetail, AttendancePage, FinancePage, UsersPage, UsersQuery } from './users.models';
+import { AdminUserDetail, AttendancePage, FinanceInsights, FinancePage, UsersPage, UsersQuery } from './users.models';
 
 @Injectable({ providedIn: 'root' })
 export class UsersService {
@@ -36,5 +36,10 @@ export class UsersService {
   finance(id: string, year: number, month: number, page: number): Observable<FinancePage> {
     const params = new HttpParams().set('year', year).set('month', month).set('page', page).set('pageSize', 10);
     return this.http.get<FinancePage>(`admin/users/${id}/transactions`, { params });
+  }
+
+  financeInsights(id: string, year: number, month: number): Observable<FinanceInsights> {
+    const params = new HttpParams().set('year', year).set('month', month);
+    return this.http.get<FinanceInsights>(`admin/users/${id}/finance-insights`, { params });
   }
 }

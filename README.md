@@ -12,6 +12,10 @@ income/expense/net summaries. Money is accepted and returned as positive decimal
 `BIGINT`; clients must not convert it to floating point. Administrators can inspect a selected user's finance data but
 cannot mutate it.
 
+Monthly overall and expense-category budgets add integer-safe spent, remaining, usage, and exceeded calculations.
+Finance analytics provide a selected-month category breakdown and a fixed six-month income/expense trend without
+forecasting or long-range reporting.
+
 ## Stack
 
 - NestJS, TypeScript, Prisma, PostgreSQL
@@ -62,5 +66,5 @@ read-only; status changes are guarded and disabling an account revokes its sessi
 
 ## Status
 
-Milestones 1–5 are complete. Budgets, analytics, gold prices, alerts, notifications, and later product behavior remain
-pending.
+Milestones 1–5 are complete. Milestone 6 is implemented and awaiting hosted CI confirmation. Gold prices, alerts,
+notifications, and later product behavior remain pending.

@@ -18,7 +18,13 @@ const detail = {
 };
 
 describe('UserDetailComponent', () => {
-  const users = { detail: jest.fn(), updateStatus: jest.fn(), attendance: jest.fn(), finance: jest.fn() };
+  const users = {
+    detail: jest.fn(),
+    updateStatus: jest.fn(),
+    attendance: jest.fn(),
+    finance: jest.fn(),
+    financeInsights: jest.fn(),
+  };
 
   beforeEach(async () => {
     users.detail.mockReset().mockReturnValue(of(detail));
@@ -58,6 +64,26 @@ describe('UserDetailComponent', () => {
         totalItems: 1,
         totalPages: 1,
         summary: { totalIncome: '1000000', totalExpense: '150000', netBalance: '850000', currency: 'VND' },
+      }),
+    );
+    users.financeInsights.mockReset().mockReturnValue(
+      of({
+        budgets: [
+          {
+            id: 'budget-1',
+            categoryId: null,
+            category: null,
+            amount: '1000000',
+            spentAmount: '150000',
+            remainingAmount: '850000',
+            percentageUsed: 15,
+            exceeded: false,
+          },
+        ],
+        analytics: {
+          expenseByCategory: [{ category: { id: 'food', name: 'Food' }, amount: '150000', percentage: 100 }],
+          trend: [{ year: 2026, month: 8, totalIncome: '0', totalExpense: '150000', netBalance: '-150000' }],
+        },
       }),
     );
     await TestBed.configureTestingModule({
@@ -134,5 +160,14 @@ describe('UserDetailComponent', () => {
     fixture = TestBed.createComponent(UserDetailComponent);
     fixture.detectChanges();
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Finance data could not be loaded');
+  });
+
+  it('renders budget usage, category analytics, and refreshes them on month change', () => {
+    const fixture = TestBed.createComponent(UserDetailComponent);
+    fixture.detectChanges();
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Overall budget');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Expense breakdown');
+    fixture.componentInstance.changeFinanceMonth(-1);
+    expect(users.financeInsights).toHaveBeenCalledTimes(2);
   });
 });

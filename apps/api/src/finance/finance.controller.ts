@@ -19,11 +19,14 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import {
+  BudgetMonthQueryDto,
   CreateCategoryDto,
   CreateTransactionDto,
   TransactionQueryDto,
+  UpdateBudgetDto,
   UpdateCategoryDto,
   UpdateTransactionDto,
+  UpsertBudgetDto,
 } from './dto/finance.dto';
 import { FinanceService } from './finance.service';
 
@@ -121,6 +124,57 @@ export class FinanceController {
   ) {
     return this.finance.summary(user.id, query.year, query.month);
   }
+
+  @Get('budgets')
+  @ApiOperation({ summary: "Get the current user's monthly budgets and usage" })
+  budgets(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query() query: BudgetMonthQueryDto,
+  ) {
+    return this.finance.budgets(user.id, query);
+  }
+
+  @Post('budgets')
+  @ApiOperation({
+    summary: 'Create or replace an overall or category monthly budget',
+  })
+  upsertBudget(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: UpsertBudgetDto,
+  ) {
+    return this.finance.upsertBudget(user.id, dto);
+  }
+
+  @Patch('budgets/:id')
+  @ApiOperation({ summary: 'Update an owned monthly budget' })
+  updateBudget(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+    @Body() dto: UpdateBudgetDto,
+  ) {
+    return this.finance.updateBudget(user.id, id, dto.amount);
+  }
+
+  @Delete('budgets/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Delete an owned monthly budget' })
+  deleteBudget(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+  ) {
+    return this.finance.deleteBudget(user.id, id);
+  }
+
+  @Get('analytics')
+  @ApiOperation({
+    summary: 'Get monthly category spending and a six-month trend',
+  })
+  analytics(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query() query: BudgetMonthQueryDto,
+  ) {
+    return this.finance.analytics(user.id, query.year, query.month);
+  }
 }
 
 @ApiTags('admin finance')
@@ -137,5 +191,22 @@ export class AdminFinanceController {
   })
   transactions(@Param('id') id: string, @Query() query: TransactionQueryDto) {
     return this.finance.adminTransactions(id, query);
+  }
+}
+
+@ApiTags('admin finance')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(UserRole.ADMIN)
+@Controller('admin/users/:id/finance-insights')
+export class AdminFinanceInsightsController {
+  constructor(private readonly finance: FinanceService) {}
+
+  @Get()
+  @ApiOperation({
+    summary: "Inspect a selected user's monthly budgets and analytics",
+  })
+  insights(@Param('id') id: string, @Query() query: BudgetMonthQueryDto) {
+    return this.finance.adminInsights(id, query);
   }
 }

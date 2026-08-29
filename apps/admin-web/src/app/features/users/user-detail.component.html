@@ -155,6 +155,52 @@
                 <div>
                   <span>Income</span><strong>{{ formatVnd(data.summary.totalIncome) }}</strong>
                 </div>
+                @if (financeInsights$ | async; as insights) {
+                  @if (insights.loading) {
+                    <p>Loading budgets and analytics…</p>
+                  } @else if (insights.error) {
+                    <p class="error">Budget analytics could not be loaded.</p>
+                  } @else {
+                    @if (insights.data; as insightData) {
+                      @if (!insightData.budgets.length) {
+                        <p>No budgets set for this month.</p>
+                      } @else {
+                        <div class="budget-grid">
+                          @for (budget of insightData.budgets; track budget.id) {
+                            <div [class.budget-exceeded]="budget.exceeded">
+                              <span>{{ budget.category?.name ?? 'Overall budget' }}</span>
+                              <strong>{{ formatVnd(budget.spentAmount) }} / {{ formatVnd(budget.amount) }}</strong>
+                              <small
+                                >{{ budget.percentageUsed }}% used ·
+                                {{ formatVnd(budget.remainingAmount) }} remaining</small
+                              >
+                            </div>
+                          }
+                        </div>
+                      }
+                      <h3>Expense breakdown</h3>
+                      @if (!insightData.analytics.expenseByCategory.length) {
+                        <p>No expense data for this month.</p>
+                      } @else {
+                        @for (category of insightData.analytics.expenseByCategory; track category.category.id) {
+                          <div class="breakdown-row">
+                            <span>{{ category.category.name }} · {{ category.percentage }}%</span>
+                            <strong>{{ formatVnd(category.amount) }}</strong>
+                          </div>
+                        }
+                      }
+                      <h3>Six-month trend</h3>
+                      <div class="trend-grid">
+                        @for (point of insightData.analytics.trend; track point.year + '-' + point.month) {
+                          <div>
+                            <span>{{ point.month }}/{{ point.year }}</span
+                            ><strong>{{ formatVnd(point.totalExpense) }}</strong>
+                          </div>
+                        }
+                      </div>
+                    }
+                  }
+                }
                 <div>
                   <span>Expense</span><strong>{{ formatVnd(data.summary.totalExpense) }}</strong>
                 </div>

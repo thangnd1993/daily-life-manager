@@ -53,3 +53,8 @@ transactions must reference a visible category of the same type. Every transacti
 `userId`, a UTC month range, deterministic ordering, and pagination. PostgreSQL `BIGINT` stores VND amounts and the API
 serializes all monetary values as decimal strings. Monthly summaries aggregate in PostgreSQL. The explicit ADMIN route
 reuses the same owner-scoped queries for read-only selected-user inspection.
+
+`FinanceBudget` represents either an overall monthly expense budget or a category-specific budget. PostgreSQL partial
+unique indexes enforce one budget for each valid scope despite nullable category semantics. Usage aggregates only
+monthly expense transactions. Analytics reuse monthly totals and add category grouping plus an oldest-to-current fixed
+six-month trend; money remains `BIGINT` until string serialization.

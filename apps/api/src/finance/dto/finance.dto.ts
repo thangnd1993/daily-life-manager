@@ -77,3 +77,33 @@ export class TransactionQueryDto {
   @IsOptional() @IsString() categoryId?: string;
   @IsOptional() @IsString() @MaxLength(120) search?: string;
 }
+
+export class BudgetMonthQueryDto {
+  @Type(() => Number) @IsInt() @Min(2000) @Max(2100) year =
+    new Date().getUTCFullYear();
+  @Type(() => Number) @IsInt() @Min(1) @Max(12) month =
+    new Date().getUTCMonth() + 1;
+}
+
+export class UpsertBudgetDto extends BudgetMonthQueryDto {
+  @ApiProperty({ example: '5000000' })
+  @IsString()
+  @Matches(/^[1-9]\d{0,15}$/)
+  amount!: string;
+
+  @ApiProperty({ enum: Currency, default: Currency.VND })
+  @IsEnum(Currency)
+  currency: Currency = Currency.VND;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  categoryId?: string;
+}
+
+export class UpdateBudgetDto {
+  @ApiProperty({ example: '5000000' })
+  @IsString()
+  @Matches(/^[1-9]\d{0,15}$/)
+  amount!: string;
+}

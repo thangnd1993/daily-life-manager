@@ -6,6 +6,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import {
   AdminFinanceController,
+  AdminFinanceInsightsController,
   FinanceController,
 } from './finance.controller';
 
@@ -23,5 +24,14 @@ describe('Finance authorization', () => {
     expect(new Reflector().get(ROLES_KEY, AdminFinanceController)).toEqual([
       UserRole.ADMIN,
     ]);
+  });
+
+  it('requires ADMIN role for selected-user budget analytics', () => {
+    expect(
+      Reflect.getMetadata(GUARDS_METADATA, AdminFinanceInsightsController),
+    ).toEqual([JwtAuthGuard, RolesGuard]);
+    expect(
+      new Reflector().get(ROLES_KEY, AdminFinanceInsightsController),
+    ).toEqual([UserRole.ADMIN]);
   });
 });

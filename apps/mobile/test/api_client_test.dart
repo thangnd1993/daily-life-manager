@@ -89,4 +89,23 @@ void main() {
     expect(jsonDecode(requests[3].body)['amount'], '150000');
     expect(requests.last.method, 'DELETE');
   });
+
+  test('maps budget and analytics endpoints with string money', () async {
+    final requests = <http.Request>[];
+    final api = ApiClient(tokenStore: MemoryStore(), client: MockClient((request) async {
+      requests.add(request);
+      if (request.url.path.endsWith('/analytics')) return http.Response(jsonEncode({'trend': [], 'expenseByCategory': []}), 200);
+      if (request.method == 'GET') return http.Response(jsonEncode([{'id': 'budget-1', 'amount': '5000000', 'spentAmount': '1000000'}]), 200);
+      if (request.method == 'DELETE') return http.Response('', 204);
+      return http.Response(jsonEncode({'id': 'budget-1', 'amount': '5000000'}), 200);
+    }));
+    expect((await api.financeBudgets(2026, 8)).first['amount'], '5000000');
+    await api.financeAnalytics(2026, 8);
+    await api.upsertFinanceBudget({'year': 2026, 'month': 8, 'amount': '5000000', 'currency': 'VND'});
+    await api.updateFinanceBudget('budget-1', '6000000');
+    await api.deleteFinanceBudget('budget-1');
+    expect(requests.first.url.queryParameters['month'], '8');
+    expect(jsonDecode(requests[2].body)['amount'], '5000000');
+    expect(requests.last.method, 'DELETE');
+  });
 }

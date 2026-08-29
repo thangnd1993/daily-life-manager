@@ -87,6 +87,12 @@ void main() {
         if (request.url.path.endsWith('/finance/categories')) {
           return http.Response(jsonEncode([{'id': 'food', 'name': 'Food', 'type': 'EXPENSE', 'userId': null}]), 200);
         }
+        if (request.url.path.endsWith('/finance/budgets')) {
+          return http.Response(jsonEncode([{'id': 'budget-1', 'categoryId': null, 'category': null, 'amount': '1000000', 'spentAmount': '150000', 'remainingAmount': '850000', 'percentageUsed': 15, 'exceeded': false}]), 200);
+        }
+        if (request.url.path.endsWith('/finance/analytics')) {
+          return http.Response(jsonEncode({'expenseByCategory': [{'category': {'id': 'food', 'name': 'Food'}, 'amount': '150000', 'percentage': 100}], 'trend': [{'year': 2026, 'month': 8, 'totalIncome': '1000000', 'totalExpense': '150000', 'netBalance': '850000'}]}), 200);
+        }
         return http.Response(jsonEncode({'items': [{'id': 'tx-1', 'type': 'EXPENSE', 'amount': '150000', 'categoryId': 'food', 'description': 'Lunch', 'occurredAt': '2026-08-30T05:00:00Z', 'category': {'id': 'food', 'name': 'Food'}}]}), 200);
       }),
     );
@@ -100,5 +106,8 @@ void main() {
     expect(find.text('Transactions'), findsOneWidget);
     expect(find.text('Food'), findsOneWidget);
     expect(find.text('1.000.000 ₫'), findsOneWidget);
+    expect(find.text('Overall expenses'), findsOneWidget);
+    expect(find.text('Expense breakdown'), findsOneWidget);
+    expect(find.text('Six-month trend'), findsOneWidget);
   });
 }

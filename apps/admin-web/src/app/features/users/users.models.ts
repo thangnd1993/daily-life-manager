@@ -69,3 +69,30 @@ export interface FinancePage {
     currency: 'VND';
   };
 }
+
+export interface FinanceInsights {
+  budgets: Array<{
+    id: string;
+    categoryId: string | null;
+    category: { id: string; name: string } | null;
+    amount: string;
+    spentAmount: string;
+    remainingAmount: string;
+    percentageUsed: number;
+    exceeded: boolean;
+  }>;
+  analytics: {
+    expenseByCategory: Array<{
+      category: { id: string; name: string };
+      amount: string;
+      percentage: number;
+    }>;
+    trend: Array<{
+      year: number;
+      month: number;
+      totalIncome: string;
+      totalExpense: string;
+      netBalance: string;
+    }>;
+  };
+}

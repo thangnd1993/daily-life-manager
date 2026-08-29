@@ -57,6 +57,15 @@ export class UserDetailComponent {
       ),
     ),
   );
+  readonly financeInsights$ = this.financeQuery.pipe(
+    switchMap(({ year, month }) =>
+      this.users.financeInsights(this.route.snapshot.paramMap.get('id') ?? '', year, month).pipe(
+        map((data) => ({ loading: false, data, error: false })),
+        startWith({ loading: true, data: null, error: false }),
+        catchError(() => of({ loading: false, data: null, error: true })),
+      ),
+    ),
+  );
 
   constructor(
     private readonly route: ActivatedRoute,

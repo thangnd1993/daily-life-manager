@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { Currency, FinanceTransactionType } from '@prisma/client';
 import { PrismaService } from '../database/prisma.service';
-import { TransactionQueryDto } from './dto/finance.dto';
+import { BudgetMonthQueryDto, TransactionQueryDto } from './dto/finance.dto';
 import { FinanceService } from './finance.service';
 
 describe('FinanceService', () => {
@@ -26,6 +26,14 @@ describe('FinanceService', () => {
       deleteMany: jest.fn(),
       count: jest.fn(),
       groupBy: jest.fn(),
+    },
+    financeBudget: {
+      findMany: jest.fn(),
+      findFirst: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      deleteMany: jest.fn(),
+      count: jest.fn(),
     },
     user: { count: jest.fn() },
     $transaction: jest.fn(),
@@ -159,5 +167,105 @@ describe('FinanceService', () => {
     await expect(
       service.adminTransactions('missing', new TransactionQueryDto()),
     ).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('calculates overall and category budget usage without floating-point money', async () => {
+    prisma.financeBudget.findMany.mockResolvedValue([
+      { id: 'overall', categoryId: null, amount: 1000n },
+      { id: 'food-budget', categoryId: 'food', amount: 300n },
+    ]);
+    prisma.financeTransaction.groupBy.mockResolvedValue([
+      { categoryId: 'food', _sum: { amount: 400n } },
+    ]);
+    const result = await service.budgets(
+      'user-1',
+      Object.assign(new BudgetMonthQueryDto(), { year: 2026, month: 8 }),
+    );
+    expect(result[0]).toMatchObject({
+      amount: '1000',
+      spentAmount: '400',
+      remainingAmount: '600',
+      exceeded: false,
+    });
+    expect(result[1]).toMatchObject({
+      amount: '300',
+      spentAmount: '400',
+      remainingAmount: '-100',
+      exceeded: true,
+    });
+  });
+
+  it('upserts an overall budget for only the authenticated owner', async () => {
+    prisma.financeBudget.findFirst.mockResolvedValue({ id: 'budget-1' });
+    prisma.financeBudget.update.mockResolvedValue({
+      id: 'budget-1',
+      amount: 5000n,
+    });
+    prisma.financeBudget.findMany.mockResolvedValue([
+      { id: 'budget-1', categoryId: null, amount: 5000n },
+    ]);
+    prisma.financeTransaction.groupBy.mockResolvedValue([]);
+    await service.upsertBudget('user-1', {
+      year: 2026,
+      month: 8,
+      amount: '5000',
+      currency: Currency.VND,
+    });
+    expect(prisma.financeBudget.findFirst).toHaveBeenCalledWith({
+      where: { userId: 'user-1', year: 2026, month: 8, categoryId: null },
+    });
+    expect(prisma.financeBudget.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: { amount: 5000n, currency: Currency.VND },
+      }),
+    );
+  });
+
+  it('rejects a foreign private category for category budgets', async () => {
+    prisma.transactionCategory.findFirst.mockResolvedValue(null);
+    await expect(
+      service.upsertBudget('user-1', {
+        year: 2026,
+        month: 8,
+        amount: '5000',
+        currency: Currency.VND,
+        categoryId: 'foreign',
+      }),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  it('does not update or delete another user budget', async () => {
+    prisma.financeBudget.findFirst.mockResolvedValue(null);
+    prisma.financeBudget.deleteMany.mockResolvedValue({ count: 0 });
+    await expect(
+      service.updateBudget('user-1', 'foreign', '1'),
+    ).rejects.toBeInstanceOf(NotFoundException);
+    await expect(
+      service.deleteBudget('user-1', 'foreign'),
+    ).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('returns category analytics sorted by spend and an oldest-to-current six-month trend', async () => {
+    prisma.financeTransaction.groupBy
+      .mockResolvedValueOnce([
+        { type: FinanceTransactionType.EXPENSE, _sum: { amount: 1000n } },
+      ])
+      .mockResolvedValueOnce([
+        { categoryId: 'food', _sum: { amount: 750n } },
+        { categoryId: 'bills', _sum: { amount: 250n } },
+      ])
+      .mockResolvedValue([]);
+    prisma.transactionCategory.findMany.mockResolvedValue([
+      { id: 'food', name: 'Food' },
+      { id: 'bills', name: 'Bills' },
+    ]);
+    const result = await service.analytics('user-1', 2026, 8);
+    expect(result.expenseByCategory[0]).toMatchObject({
+      amount: '750',
+      percentage: 75,
+    });
+    expect(result.trend).toHaveLength(6);
+    expect(result.trend[0]).toMatchObject({ year: 2026, month: 3 });
+    expect(result.trend[5]).toMatchObject({ year: 2026, month: 8 });
   });
 });

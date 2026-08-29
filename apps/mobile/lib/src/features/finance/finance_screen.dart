@@ -17,6 +17,8 @@ class _FinanceScreenState extends State<FinanceScreen> {
   Map<String, dynamic> summary = const {};
   List<Map<String, dynamic>> transactions = const [];
   List<Map<String, dynamic>> categories = const [];
+  List<Map<String, dynamic>> budgets = const [];
+  Map<String, dynamic> analytics = const {};
 
   @override
   void initState() {
@@ -33,6 +35,8 @@ class _FinanceScreenState extends State<FinanceScreen> {
         widget.api.financeSummary(month.year, month.month),
         widget.api.financeTransactions(month.year, month.month),
         widget.api.financeCategories(),
+        widget.api.financeBudgets(month.year, month.month),
+        widget.api.financeAnalytics(month.year, month.month),
       ]);
       final page = results[1] as Map<String, dynamic>;
       if (mounted) {
@@ -40,6 +44,8 @@ class _FinanceScreenState extends State<FinanceScreen> {
           summary = results[0] as Map<String, dynamic>;
           transactions = (page['items'] as List<dynamic>? ?? const []).cast<Map<String, dynamic>>();
           categories = results[2] as List<Map<String, dynamic>>;
+          budgets = results[3] as List<Map<String, dynamic>>;
+          analytics = results[4] as Map<String, dynamic>;
           loading = false;
         });
       }
@@ -142,6 +148,34 @@ class _FinanceScreenState extends State<FinanceScreen> {
     await _load();
   }
 
+  Future<void> _editBudget([Map<String, dynamic>? budget]) async {
+    final amount = TextEditingController(text: budget?['amount'] as String? ?? '');
+    String? categoryId = budget?['categoryId'] as String?;
+    final expenseCategories = categories.where((category) => category['type'] == 'EXPENSE').toList();
+    final saved = await showDialog<bool>(context: context, builder: (context) => AlertDialog(
+      title: Text(budget == null ? 'Set monthly budget' : 'Edit monthly budget'),
+      content: Column(mainAxisSize: MainAxisSize.min, children: [
+        if (budget == null) DropdownButtonFormField<String?>(initialValue: categoryId, decoration: const InputDecoration(labelText: 'Scope'), items: [const DropdownMenuItem(value: null, child: Text('Overall expenses')), ...expenseCategories.map((category) => DropdownMenuItem(value: category['id'] as String, child: Text(category['name'] as String)))], onChanged: (value) => categoryId = value),
+        TextField(controller: amount, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Budget amount (VND)')),
+      ]),
+      actions: [TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')), FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Save'))],
+    ));
+    if (saved == true && RegExp(r'^[1-9]\d*$').hasMatch(amount.text)) {
+      if (budget == null) {
+        await widget.api.upsertFinanceBudget({'year': month.year, 'month': month.month, 'amount': amount.text, 'currency': 'VND', if (categoryId != null) 'categoryId': categoryId});
+      } else {
+        await widget.api.updateFinanceBudget(budget['id'] as String, amount.text);
+      }
+      await _load();
+    }
+    amount.dispose();
+  }
+
+  Future<void> _deleteBudget(Map<String, dynamic> budget) async {
+    await widget.api.deleteFinanceBudget(budget['id'] as String);
+    await _load();
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: const Color(0xffeef4fb),
@@ -157,6 +191,23 @@ class _FinanceScreenState extends State<FinanceScreen> {
           _SummaryCard(label: 'Expense', value: _money(summary['totalExpense']), color: Colors.red),
           _SummaryCard(label: 'Net', value: _money(summary['netBalance']), color: Colors.blue),
         ]),
+        const SizedBox(height: 16),
+        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('Budgets', style: Theme.of(context).textTheme.titleLarge), TextButton.icon(onPressed: () => _editBudget(), icon: const Icon(Icons.add), label: const Text('Set budget'))]),
+        if (budgets.isEmpty) const Text('No budgets set for this month.'),
+        ...budgets.map((budget) => Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [Expanded(child: Text((budget['category'] as Map<String, dynamic>?)?['name'] as String? ?? 'Overall expenses', style: const TextStyle(fontWeight: FontWeight.bold))), IconButton(onPressed: () => _editBudget(budget), icon: const Icon(Icons.edit_outlined)), IconButton(onPressed: () => _deleteBudget(budget), icon: const Icon(Icons.delete_outline))]),
+          Text('${_money(budget['spentAmount'])} of ${_money(budget['amount'])}'),
+          const SizedBox(height: 8),
+          LinearProgressIndicator(value: ((budget['percentageUsed'] as num).toDouble() / 100).clamp(0, 1).toDouble(), color: budget['exceeded'] == true ? Colors.red : Colors.blue),
+          const SizedBox(height: 6),
+          Text(budget['exceeded'] == true ? 'Budget exceeded by ${_money((BigInt.parse(budget['remainingAmount'] as String).abs()).toString())}' : '${_money(budget['remainingAmount'])} remaining'),
+        ]))),
+        const SizedBox(height: 24),
+        Text('Expense breakdown', style: Theme.of(context).textTheme.titleLarge),
+        ...((analytics['expenseByCategory'] as List<dynamic>? ?? const []).cast<Map<String, dynamic>>()).map((item) => Padding(padding: const EdgeInsets.symmetric(vertical: 6), child: Column(children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text((item['category'] as Map<String, dynamic>)['name'] as String), Text('${item['percentage']}% · ${_money(item['amount'])}')]), const SizedBox(height: 4), LinearProgressIndicator(value: (item['percentage'] as num).toDouble() / 100)]))),
+        const SizedBox(height: 24),
+        Text('Six-month trend', style: Theme.of(context).textTheme.titleLarge),
+        ...((analytics['trend'] as List<dynamic>? ?? const []).cast<Map<String, dynamic>>()).map((point) => ListTile(contentPadding: EdgeInsets.zero, title: Text('${point['month']}/${point['year']}'), subtitle: Text('Income ${_money(point['totalIncome'])}'), trailing: Text('Expense ${_money(point['totalExpense'])}'))),
         const SizedBox(height: 24),
         Text('Transactions', style: Theme.of(context).textTheme.titleLarge),
         if (transactions.isEmpty) const Padding(padding: EdgeInsets.symmetric(vertical: 24), child: Text('No transactions for this month.')),

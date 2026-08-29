@@ -67,4 +67,13 @@ describe('UsersService', () => {
     expect(request.request.params.get('pageSize')).toBe('10');
     request.flush({ items: [], page: 2, pageSize: 10, totalItems: 0, totalPages: 0 });
   });
+
+  it('maps selected-user budget analytics month parameters', () => {
+    service.financeInsights('user-1', 2026, 8).subscribe();
+    const request = http.expectOne(
+      (candidate) => candidate.url === 'admin/users/user-1/finance-insights' && candidate.params.get('month') === '8',
+    );
+    expect(request.request.params.get('year')).toBe('2026');
+    request.flush({ budgets: [], analytics: { expenseByCategory: [], trend: [] } });
+  });
 });

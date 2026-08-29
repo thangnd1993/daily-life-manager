@@ -33,3 +33,8 @@ categories referenced by transactions cannot be deleted. VND amounts are validat
 and serialized as strings, never floating point. Cross-user finance inspection requires the explicit ADMIN guard and is
 read-only. Secrets belong in deployment secret stores, not Git. Logs must omit passwords, tokens, personal financial
 data, and device credentials. Push credentials are deferred.
+
+Budgets derive their owner from the authenticated principal and may reference only an accessible expense category.
+Updates and deletion scope by both budget ID and owner. Database checks enforce positive amounts and valid calendar
+fields, while partial unique indexes prevent duplicate overall or category budgets under concurrent requests. Admin
+budget and analytics visibility is isolated behind a read-only ADMIN route.
