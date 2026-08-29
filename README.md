@@ -66,5 +66,4 @@ read-only; status changes are guarded and disabling an account revokes its sessi
 
 ## Status
 
-Milestones 1–5 are complete. Milestone 6 is implemented and awaiting hosted CI confirmation. Gold prices, alerts,
-notifications, and later product behavior remain pending.
+Milestones 1–6 are complete. Gold prices, alerts, notifications, and later product behavior remain pending.
