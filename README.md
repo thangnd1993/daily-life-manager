@@ -1,12 +1,16 @@
 # Daily Life Manager
 
-Production-oriented multi-user personal management platform. Milestones 1–3 establish the monorepo, infrastructure,
-secure account/session APIs, authenticated mobile experience, and protected administrator user management. Personal
-management domains are not yet implemented.
+Production-oriented multi-user personal management platform with secure accounts, administrator user management,
+daily attendance, and personal finance foundations across the API, Admin portal, and Flutter app.
 
 Daily attendance lets an authenticated user check in once per server-trusted local calendar date, view the current
 state and monthly history, and lets administrators inspect a selected user's read-only history. Mobile timezone is
 configured with the `TIMEZONE` Dart define and must be a valid IANA identifier.
+
+Personal finance supports system and personal income/expense categories, VND transaction CRUD, monthly history, and
+income/expense/net summaries. Money is accepted and returned as positive decimal strings and stored as PostgreSQL
+`BIGINT`; clients must not convert it to floating point. Administrators can inspect a selected user's finance data but
+cannot mutate it.
 
 ## Stack
 
@@ -58,4 +62,5 @@ read-only; status changes are guarded and disabling an account revokes its sessi
 
 ## Status
 
-Milestones 1–4 are complete. Finance, gold prices, alerts, notifications, and later product behavior remain pending.
+Milestones 1–4 are complete. Milestone 5 is implemented and awaiting final hosted CI confirmation. Budgets, analytics,
+gold prices, alerts, notifications, and later product behavior remain pending.

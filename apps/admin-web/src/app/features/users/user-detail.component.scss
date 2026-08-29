@@ -137,6 +137,31 @@ button:disabled {
   display: flex;
   justify-content: space-between;
 }
+.finance-summary {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(3, 1fr);
+  margin-bottom: 1rem;
+}
+.finance-summary div {
+  background: rgba(255, 255, 255, 0.56);
+  border-radius: 16px;
+  display: grid;
+  gap: 0.35rem;
+  padding: 1rem;
+}
+.finance-summary span {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+.finance-expense {
+  color: #a22c25;
+}
+.finance-paging {
+  align-items: center;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
 .status {
   border-radius: 999px;
   display: inline-flex;
@@ -185,5 +210,8 @@ button:disabled {
   }
   dd {
     text-align: left;
+  }
+  .finance-summary {
+    grid-template-columns: 1fr;
   }
 }

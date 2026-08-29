@@ -132,6 +132,67 @@
           }
         }
       </section>
+
+      <section class="glass status-panel">
+        <div class="attendance-heading">
+          <div>
+            <h2>Personal finance</h2>
+            <p>Read-only monthly transactions and totals.</p>
+          </div>
+          <div class="actions">
+            <button type="button" (click)="changeFinanceMonth(-1)">Previous month</button>
+            <button type="button" (click)="changeFinanceMonth(1)">Next month</button>
+          </div>
+        </div>
+        @if (finance$ | async; as finance) {
+          @if (finance.loading) {
+            <p>Loading finance…</p>
+          } @else if (finance.error) {
+            <p class="error">Finance data could not be loaded.</p>
+          } @else {
+            @if (finance.data; as data) {
+              <div class="finance-summary">
+                <div>
+                  <span>Income</span><strong>{{ formatVnd(data.summary.totalIncome) }}</strong>
+                </div>
+                <div>
+                  <span>Expense</span><strong>{{ formatVnd(data.summary.totalExpense) }}</strong>
+                </div>
+                <div>
+                  <span>Net</span><strong>{{ formatVnd(data.summary.netBalance) }}</strong>
+                </div>
+              </div>
+              @if (!data.items.length) {
+                <p>No transactions for this month.</p>
+              } @else {
+                @for (transaction of data.items; track transaction.id) {
+                  <dl>
+                    <div>
+                      <dt>{{ transaction.occurredAt | date: 'mediumDate' }} · {{ transaction.category.name }}</dt>
+                      <dd [class.finance-expense]="transaction.type === 'EXPENSE'">
+                        {{ transaction.type === 'EXPENSE' ? '−' : '+' }}{{ formatVnd(transaction.amount) }}
+                      </dd>
+                    </div>
+                  </dl>
+                }
+                <div class="actions finance-paging">
+                  <button type="button" [disabled]="data.page <= 1" (click)="changeFinancePage(data.page - 1)">
+                    Previous
+                  </button>
+                  <span>Page {{ data.page }} of {{ data.totalPages }}</span>
+                  <button
+                    type="button"
+                    [disabled]="data.page >= data.totalPages"
+                    (click)="changeFinancePage(data.page + 1)"
+                  >
+                    Next
+                  </button>
+                </div>
+              }
+            }
+          }
+        }
+      </section>
     }
   }
 }

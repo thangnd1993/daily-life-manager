@@ -31,22 +31,65 @@ enum AttendanceSource {
   ADMIN
 }
 
+enum FinanceTransactionType {
+  INCOME
+  EXPENSE
+}
+
+enum Currency {
+  VND
+}
+
 model User {
-  id                  String               @id @default(cuid())
-  email               String               @unique
-  passwordHash        String
-  displayName         String
-  role                UserRole             @default(USER)
-  status              UserStatus           @default(ACTIVE)
-  emailVerifiedAt     DateTime?
-  lastLoginAt         DateTime?
-  createdAt           DateTime             @default(now())
-  updatedAt           DateTime             @updatedAt
-  authSessions        AuthSession[]
-  passwordResetTokens PasswordResetToken[]
-  attendances         Attendance[]
+  id                    String                @id @default(cuid())
+  email                 String                @unique
+  passwordHash          String
+  displayName           String
+  role                  UserRole              @default(USER)
+  status                UserStatus            @default(ACTIVE)
+  emailVerifiedAt       DateTime?
+  lastLoginAt           DateTime?
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+  authSessions          AuthSession[]
+  passwordResetTokens   PasswordResetToken[]
+  attendances           Attendance[]
+  transactionCategories TransactionCategory[]
+  financeTransactions   FinanceTransaction[]
 
   @@index([status])
+}
+
+model TransactionCategory {
+  id           String                 @id @default(cuid())
+  userId       String?
+  name         String
+  type         FinanceTransactionType
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+  user         User?                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions FinanceTransaction[]
+
+  @@unique([userId, name, type])
+  @@index([userId, type])
+}
+
+model FinanceTransaction {
+  id          String                 @id @default(cuid())
+  userId      String
+  type        FinanceTransactionType
+  amount      BigInt
+  currency    Currency               @default(VND)
+  categoryId  String
+  description String?
+  occurredAt  DateTime
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
+  user        User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category    TransactionCategory    @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  @@index([userId, occurredAt(sort: Desc)])
+  @@index([categoryId])
 }
 
 model Attendance {

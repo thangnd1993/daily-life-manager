@@ -47,3 +47,25 @@ export interface AttendancePage {
   year: number;
   month: number;
 }
+
+export interface FinancePage {
+  items: Array<{
+    id: string;
+    type: 'INCOME' | 'EXPENSE';
+    amount: string;
+    currency: 'VND';
+    description: string | null;
+    occurredAt: string;
+    category: { id: string; name: string };
+  }>;
+  page: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+  summary: {
+    totalIncome: string;
+    totalExpense: string;
+    netBalance: string;
+    currency: 'VND';
+  };
+}

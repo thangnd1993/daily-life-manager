@@ -43,6 +43,20 @@ export class UserDetailComponent {
       ),
     ),
   );
+  readonly financeQuery = new BehaviorSubject({
+    year: new Date().getFullYear(),
+    month: new Date().getMonth() + 1,
+    page: 1,
+  });
+  readonly finance$ = this.financeQuery.pipe(
+    switchMap(({ year, month, page }) =>
+      this.users.finance(this.route.snapshot.paramMap.get('id') ?? '', year, month, page).pipe(
+        map((data) => ({ loading: false, data, error: false })),
+        startWith({ loading: true, data: null, error: false }),
+        catchError(() => of({ loading: false, data: null, error: true })),
+      ),
+    ),
+  );
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -83,5 +97,19 @@ export class UserDetailComponent {
     const current = this.attendanceMonth.value;
     const date = new Date(current.year, current.month - 1 + offset, 1);
     this.attendanceMonth.next({ year: date.getFullYear(), month: date.getMonth() + 1 });
+  }
+
+  changeFinanceMonth(offset: number): void {
+    const current = this.financeQuery.value;
+    const date = new Date(current.year, current.month - 1 + offset, 1);
+    this.financeQuery.next({ year: date.getFullYear(), month: date.getMonth() + 1, page: 1 });
+  }
+
+  changeFinancePage(page: number): void {
+    this.financeQuery.next({ ...this.financeQuery.value, page });
+  }
+
+  formatVnd(value: string): string {
+    return `${new Intl.NumberFormat('vi-VN').format(BigInt(value))} ₫`;
   }
 }

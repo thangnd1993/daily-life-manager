@@ -56,4 +56,15 @@ describe('UsersService', () => {
     expect(request.request.params.get('pageSize')).toBe('31');
     request.flush({ items: [], checkedInDays: 0, year: 2026, month: 8 });
   });
+
+  it('maps selected-user finance pagination and month parameters', () => {
+    service.finance('user-1', 2026, 8, 2).subscribe();
+    const request = http.expectOne(
+      (candidate) => candidate.url === 'admin/users/user-1/transactions' && candidate.params.get('page') === '2',
+    );
+    expect(request.request.params.get('year')).toBe('2026');
+    expect(request.request.params.get('month')).toBe('8');
+    expect(request.request.params.get('pageSize')).toBe('10');
+    request.flush({ items: [], page: 2, pageSize: 10, totalItems: 0, totalPages: 0 });
+  });
 });

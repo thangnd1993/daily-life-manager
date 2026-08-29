@@ -70,4 +70,35 @@ void main() {
     expect(find.text('Complete'), findsOneWidget);
     expect(find.textContaining('This month · 1 days'), findsOneWidget);
   });
+
+  testWidgets('opens finance overview with string VND totals and transactions', (tester) async {
+    final api = ApiClient(
+      tokenStore: MemoryTokenStore(),
+      client: MockClient((request) async {
+        if (request.url.path.endsWith('/attendance/today')) {
+          return http.Response(jsonEncode({'checkedIn': false, 'record': null}), 200);
+        }
+        if (request.url.path.endsWith('/attendance')) {
+          return http.Response(jsonEncode({'items': []}), 200);
+        }
+        if (request.url.path.endsWith('/finance/summary')) {
+          return http.Response(jsonEncode({'totalIncome': '1000000', 'totalExpense': '150000', 'netBalance': '850000'}), 200);
+        }
+        if (request.url.path.endsWith('/finance/categories')) {
+          return http.Response(jsonEncode([{'id': 'food', 'name': 'Food', 'type': 'EXPENSE', 'userId': null}]), 200);
+        }
+        return http.Response(jsonEncode({'items': [{'id': 'tx-1', 'type': 'EXPENSE', 'amount': '150000', 'categoryId': 'food', 'description': 'Lunch', 'occurredAt': '2026-08-30T05:00:00Z', 'category': {'id': 'food', 'name': 'Food'}}]}), 200);
+      }),
+    );
+    final auth = AuthController(api)
+      ..status = AuthStatus.signedIn
+      ..account = const Account(id: '1', email: 'u@example.com', displayName: 'User', role: 'USER', status: 'ACTIVE');
+    await tester.pumpWidget(DailyLifeManagerApp(authController: auth));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Personal finance'));
+    await tester.pumpAndSettle();
+    expect(find.text('Transactions'), findsOneWidget);
+    expect(find.text('Food'), findsOneWidget);
+    expect(find.text('1.000.000 ₫'), findsOneWidget);
+  });
 }

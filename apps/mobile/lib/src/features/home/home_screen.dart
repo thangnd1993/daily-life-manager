@@ -75,6 +75,17 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           if (error != null) Padding(padding: const EdgeInsets.all(12), child: Text(error!, style: const TextStyle(color: Colors.red))),
           const SizedBox(height: 20),
+          Card(
+            elevation: 0,
+            child: ListTile(
+              leading: const Icon(Icons.account_balance_wallet_outlined),
+              title: const Text('Personal finance'),
+              subtitle: const Text('Income, expenses, and categories'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.go('/finance'),
+            ),
+          ),
+          const SizedBox(height: 20),
           Text('This month · ${monthRecords.length} days', style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 8),
           if (!loading && monthRecords.isEmpty)

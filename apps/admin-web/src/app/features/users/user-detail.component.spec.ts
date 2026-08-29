@@ -18,7 +18,7 @@ const detail = {
 };
 
 describe('UserDetailComponent', () => {
-  const users = { detail: jest.fn(), updateStatus: jest.fn(), attendance: jest.fn() };
+  const users = { detail: jest.fn(), updateStatus: jest.fn(), attendance: jest.fn(), finance: jest.fn() };
 
   beforeEach(async () => {
     users.detail.mockReset().mockReturnValue(of(detail));
@@ -38,6 +38,26 @@ describe('UserDetailComponent', () => {
         checkedInDays: 1,
         year: 2026,
         month: 8,
+      }),
+    );
+    users.finance.mockReset().mockReturnValue(
+      of({
+        items: [
+          {
+            id: 'tx-1',
+            type: 'EXPENSE',
+            amount: '150000',
+            currency: 'VND',
+            description: null,
+            occurredAt: '2026-08-29T01:00:00Z',
+            category: { id: 'food', name: 'Food' },
+          },
+        ],
+        page: 1,
+        pageSize: 10,
+        totalItems: 1,
+        totalPages: 1,
+        summary: { totalIncome: '1000000', totalExpense: '150000', netBalance: '850000', currency: 'VND' },
       }),
     );
     await TestBed.configureTestingModule({
@@ -84,5 +104,35 @@ describe('UserDetailComponent', () => {
     fixture = TestBed.createComponent(UserDetailComponent);
     fixture.detectChanges();
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Attendance could not be loaded');
+  });
+
+  it('renders selected-user finance totals and changes month', () => {
+    const fixture = TestBed.createComponent(UserDetailComponent);
+    fixture.detectChanges();
+    expect(users.finance).toHaveBeenCalledWith('user-1', expect.any(Number), expect.any(Number), 1);
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Food');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('1.000.000 ₫');
+    fixture.componentInstance.changeFinanceMonth(-1);
+    expect(users.finance).toHaveBeenCalledTimes(2);
+  });
+
+  it('renders finance empty and error states', () => {
+    users.finance.mockReturnValueOnce(
+      of({
+        items: [],
+        page: 1,
+        pageSize: 10,
+        totalItems: 0,
+        totalPages: 0,
+        summary: { totalIncome: '0', totalExpense: '0', netBalance: '0', currency: 'VND' },
+      }),
+    );
+    let fixture = TestBed.createComponent(UserDetailComponent);
+    fixture.detectChanges();
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('No transactions');
+    users.finance.mockReturnValueOnce(throwError(() => new Error('failed')));
+    fixture = TestBed.createComponent(UserDetailComponent);
+    fixture.detectChanges();
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Finance data could not be loaded');
   });
 });

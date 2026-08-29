@@ -9,6 +9,7 @@ import { appConfig } from './config/app.config';
 import { environmentSchema } from './config/environment.validation';
 import { DatabaseModule } from './database/database.module';
 import { HealthModule } from './health/health.module';
+import { FinanceModule } from './finance/finance.module';
 import { QueueModule } from './queue/queue.module';
 
 @Module({
@@ -26,6 +27,7 @@ import { QueueModule } from './queue/queue.module';
     AuthModule,
     AdminUsersModule,
     AttendanceModule,
+    FinanceModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

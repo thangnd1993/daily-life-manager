@@ -35,6 +35,26 @@ class ApiClient {
       await request('POST', 'attendance/check-in', body: {'timezone': timezone}) as Map<String, dynamic>;
   Future<Map<String, dynamic>> attendanceMonth(int year, int month) async =>
       await request('GET', 'attendance?year=$year&month=$month&pageSize=31') as Map<String, dynamic>;
+  Future<List<Map<String, dynamic>>> financeCategories() async =>
+      (await request('GET', 'finance/categories') as List<dynamic>).cast<Map<String, dynamic>>();
+  Future<Map<String, dynamic>> financeSummary(int year, int month) async =>
+      await request('GET', 'finance/summary?year=$year&month=$month') as Map<String, dynamic>;
+  Future<Map<String, dynamic>> financeTransactions(int year, int month, {int page = 1}) async =>
+      await request('GET', 'finance/transactions?year=$year&month=$month&page=$page&pageSize=20') as Map<String, dynamic>;
+  Future<Map<String, dynamic>> createFinanceTransaction(Map<String, dynamic> body) async =>
+      await request('POST', 'finance/transactions', body: body) as Map<String, dynamic>;
+  Future<Map<String, dynamic>> updateFinanceTransaction(String id, Map<String, dynamic> body) async =>
+      await request('PATCH', 'finance/transactions/$id', body: body) as Map<String, dynamic>;
+  Future<void> deleteFinanceTransaction(String id) async {
+    await request('DELETE', 'finance/transactions/$id');
+  }
+  Future<Map<String, dynamic>> createFinanceCategory(String name, String type) async =>
+      await request('POST', 'finance/categories', body: {'name': name, 'type': type}) as Map<String, dynamic>;
+  Future<Map<String, dynamic>> updateFinanceCategory(String id, String name) async =>
+      await request('PATCH', 'finance/categories/$id', body: {'name': name}) as Map<String, dynamic>;
+  Future<void> deleteFinanceCategory(String id) async {
+    await request('DELETE', 'finance/categories/$id');
+  }
 
   Future<void> logout() async {
     try {

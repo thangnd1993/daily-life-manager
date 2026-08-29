@@ -27,5 +27,9 @@ Attendance check-in trusts server time, validates the IANA timezone, and stores 
 UTC timestamp. A database unique constraint prevents concurrent duplicate daily check-ins. User history always scopes by
 the authenticated subject; cross-user inspection is isolated behind the ADMIN guard and has no mutation endpoints.
 
-Money will use integer minor units or database decimals, never floating point. Secrets belong in deployment secret stores,
-not Git. Logs must omit passwords, tokens, personal financial data, and device credentials. Push credentials are deferred.
+Finance transactions are always scoped by authenticated user ID, while category selection permits only system defaults
+or categories owned by that user and enforces matching income/expense type. Default categories are immutable; personal
+categories referenced by transactions cannot be deleted. VND amounts are validated decimal strings, stored as `BIGINT`,
+and serialized as strings, never floating point. Cross-user finance inspection requires the explicit ADMIN guard and is
+read-only. Secrets belong in deployment secret stores, not Git. Logs must omit passwords, tokens, personal financial
+data, and device credentials. Push credentials are deferred.

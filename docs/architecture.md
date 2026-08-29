@@ -45,3 +45,11 @@ operations with debounced filters and guarded lazy routes.
 Attendance belongs to a user and is uniquely constrained by user and normalized local date. The API derives that date
 from server time using a validated IANA timezone; clients cannot submit arbitrary attendance dates. User endpoints expose
 today, check-in, and monthly history, while the explicit ADMIN route provides read-only selected-user inspection.
+
+## Personal finance core
+
+`FinanceModule` owns system/personal categories and user transactions. Categories are typed as income or expense;
+transactions must reference a visible category of the same type. Every transaction query includes the authenticated
+`userId`, a UTC month range, deterministic ordering, and pagination. PostgreSQL `BIGINT` stores VND amounts and the API
+serializes all monetary values as decimal strings. Monthly summaries aggregate in PostgreSQL. The explicit ADMIN route
+reuses the same owner-scoped queries for read-only selected-user inspection.

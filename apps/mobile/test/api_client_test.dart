@@ -68,4 +68,25 @@ void main() {
     expect(requests.first.url.queryParameters['timezone'], 'Asia/Ho_Chi_Minh');
     expect(jsonDecode(requests[1].body)['timezone'], 'Asia/Ho_Chi_Minh');
   });
+
+  test('maps finance summary, categories, transaction CRUD, and BigInt strings', () async {
+    final requests = <http.Request>[];
+    final api = ApiClient(tokenStore: MemoryStore(), client: MockClient((request) async {
+      requests.add(request);
+      if (request.url.path.endsWith('/categories')) return http.Response(request.method == 'GET' ? jsonEncode([{'id': 'food', 'name': 'Food', 'type': 'EXPENSE'}]) : jsonEncode({'id': 'personal'}), 200);
+      if (request.url.path.endsWith('/summary')) return http.Response(jsonEncode({'totalIncome': '1000000000000000', 'totalExpense': '1', 'netBalance': '999999999999999'}), 200);
+      if (request.method == 'DELETE') return http.Response('', 204);
+      if (request.method == 'GET') return http.Response(jsonEncode({'items': []}), 200);
+      return http.Response(jsonEncode({'id': 'tx-1', 'amount': '150000'}), 200);
+    }));
+    expect((await api.financeSummary(2026, 8))['totalIncome'], '1000000000000000');
+    expect((await api.financeCategories()).first['name'], 'Food');
+    await api.financeTransactions(2026, 8);
+    await api.createFinanceTransaction({'amount': '150000'});
+    await api.updateFinanceTransaction('tx-1', {'amount': '160000'});
+    await api.deleteFinanceTransaction('tx-1');
+    expect(requests[2].url.queryParameters['month'], '8');
+    expect(jsonDecode(requests[3].body)['amount'], '150000');
+    expect(requests.last.method, 'DELETE');
+  });
 }
