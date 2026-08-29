@@ -50,7 +50,7 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 20),
           Card(
             elevation: 0,
-            color: Colors.white.withOpacity(.74),
+            color: Colors.white.withValues(alpha: .74),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28), side: const BorderSide(color: Colors.white)),
             child: Padding(
               padding: const EdgeInsets.all(24),
