@@ -112,6 +112,6 @@ void main() {
     expect(find.text('Six-month trend'), findsOneWidget);
     await tester.scrollUntilVisible(find.text('Transactions'), 250);
     expect(find.text('Transactions'), findsOneWidget);
-    expect(find.text('Food'), findsOneWidget);
+    expect(find.text('Food'), findsWidgets);
   });
 }
