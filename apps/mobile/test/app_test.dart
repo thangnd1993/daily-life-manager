@@ -120,6 +120,11 @@ void main() {
     final api = ApiClient(tokenStore: MemoryTokenStore(), client: MockClient((request) async {
       if (request.url.path.endsWith('/attendance/today')) return http.Response(jsonEncode({'checkedIn': false, 'record': null}), 200);
       if (request.url.path.endsWith('/attendance')) return http.Response(jsonEncode({'items': []}), 200);
+      if (request.url.path.endsWith('/gold/alerts/triggers')) return http.Response(jsonEncode([{'id': 'trigger-1', 'productCode': 'SJC', 'triggeredAt': '2026-08-30T02:00:00Z'}]), 200);
+      if (request.url.path.endsWith('/gold/alerts')) return http.Response(jsonEncode([
+        {'id': 'absolute', 'productCode': 'SJC', 'priceSide': 'BUY', 'condition': 'ABOVE', 'thresholdAmount': '90000000', 'thresholdBasisPoints': null, 'isEnabled': true, 'cooldownMinutes': 60, 'lastTriggeredAt': null},
+        {'id': 'percent', 'productCode': 'PNJ', 'priceSide': 'SELL', 'condition': 'PERCENT_CHANGE', 'thresholdAmount': null, 'thresholdBasisPoints': 250, 'isEnabled': false, 'cooldownMinutes': 60, 'lastTriggeredAt': '2026-08-30T02:00:00Z'}
+      ]), 200);
       if (request.url.path.endsWith('/history')) return http.Response(jsonEncode({'items': [{'buyPrice': '88000000', 'sellPrice': '90000000', 'sourceTimestamp': '2026-08-29T00:00:00Z'}]}), 200);
       return http.Response(jsonEncode([{'provider': 'pha', 'productCode': 'SJC', 'productName': 'SJC Gold', 'buyPrice': '88500000', 'sellPrice': '90500000', 'currency': 'VND', 'unit': 'LUONG', 'sourceTimestamp': '2026-08-30T00:00:00Z', 'stale': true}]), 200);
     }));
@@ -134,5 +139,9 @@ void main() {
     expect(find.text('90.500.000 ₫'), findsOneWidget);
     expect(find.textContaining('may be delayed'), findsWidgets);
     expect(find.text('7D'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Gold alerts'), 250);
+    expect(find.textContaining('BUY ABOVE 90.000.000'), findsOneWidget);
+    expect(find.textContaining('2.50% movement'), findsOneWidget);
+    expect(find.text('Recent alert activity'), findsOneWidget);
   });
 }

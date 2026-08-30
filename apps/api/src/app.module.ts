@@ -11,6 +11,7 @@ import { DatabaseModule } from './database/database.module';
 import { HealthModule } from './health/health.module';
 import { FinanceModule } from './finance/finance.module';
 import { GoldModule } from './gold/gold.module';
+import { GoldAlertsModule } from './gold-alerts/gold-alerts.module';
 import { QueueModule } from './queue/queue.module';
 
 @Module({
@@ -30,6 +31,7 @@ import { QueueModule } from './queue/queue.module';
     AttendanceModule,
     FinanceModule,
     GoldModule,
+    GoldAlertsModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

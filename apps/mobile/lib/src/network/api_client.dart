@@ -70,6 +70,19 @@ class ApiClient {
       (await request('GET', 'gold/prices') as List<dynamic>).cast<Map<String, dynamic>>();
   Future<Map<String, dynamic>> goldHistory(String productCode, int days) async =>
       await request('GET', 'gold/prices/${Uri.encodeComponent(productCode)}/history?days=$days&limit=200') as Map<String, dynamic>;
+  Future<List<Map<String, dynamic>>> goldAlerts() async =>
+      (await request('GET', 'gold/alerts') as List<dynamic>).cast<Map<String, dynamic>>();
+  Future<List<Map<String, dynamic>>> goldAlertTriggers() async =>
+      (await request('GET', 'gold/alerts/triggers') as List<dynamic>).cast<Map<String, dynamic>>();
+  Future<Map<String, dynamic>> createGoldAlert(Map<String, dynamic> body) async =>
+      await request('POST', 'gold/alerts', body: body) as Map<String, dynamic>;
+  Future<Map<String, dynamic>> updateGoldAlert(String id, Map<String, dynamic> body) async =>
+      await request('PATCH', 'gold/alerts/$id', body: body) as Map<String, dynamic>;
+  Future<Map<String, dynamic>> setGoldAlertEnabled(String id, bool isEnabled) async =>
+      await request('PATCH', 'gold/alerts/$id/enabled', body: {'isEnabled': isEnabled}) as Map<String, dynamic>;
+  Future<void> deleteGoldAlert(String id) async {
+    await request('DELETE', 'gold/alerts/$id');
+  }
 
   Future<void> logout() async {
     try {

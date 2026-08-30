@@ -10,5 +10,6 @@ import { GoldService } from './gold.service';
     { provide: 'GoldPriceProvider', useExisting: PhaGoldPriceProvider },
     GoldService,
   ],
+  exports: [GoldService],
 })
 export class GoldModule {}

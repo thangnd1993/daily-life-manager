@@ -121,4 +121,24 @@ void main() {
     expect(requests.last.url.queryParameters['days'], '7');
     expect(requests.last.url.queryParameters['limit'], '200');
   });
+
+  test('maps gold alert CRUD, toggle, and trigger history', () async {
+    final requests = <http.Request>[];
+    final api = ApiClient(tokenStore: MemoryStore(), client: MockClient((request) async {
+      requests.add(request);
+      if (request.url.path.endsWith('/triggers')) return http.Response(jsonEncode([{'id': 'trigger-1', 'observedBuyPrice': '90000000'}]), 200);
+      if (request.method == 'GET') return http.Response(jsonEncode([{'id': 'alert-1', 'condition': 'ABOVE', 'thresholdAmount': '90000000'}]), 200);
+      if (request.method == 'DELETE') return http.Response('', 204);
+      return http.Response(jsonEncode({'id': 'alert-1', 'isEnabled': true}), 200);
+    }));
+    expect((await api.goldAlerts()).first['thresholdAmount'], '90000000');
+    expect((await api.goldAlertTriggers()).first['observedBuyPrice'], '90000000');
+    await api.createGoldAlert({'productCode': 'SJC', 'thresholdAmount': '90000000'});
+    await api.updateGoldAlert('alert-1', {'thresholdAmount': '91000000'});
+    await api.setGoldAlertEnabled('alert-1', false);
+    await api.deleteGoldAlert('alert-1');
+    expect(requests[2].method, 'POST');
+    expect(jsonDecode(requests[4].body)['isEnabled'], false);
+    expect(requests.last.method, 'DELETE');
+  });
 }

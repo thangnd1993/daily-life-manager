@@ -64,4 +64,15 @@ six-month trend; money remains `BIGINT` until string serialization.
 `GoldPriceProvider` separates normalized domain prices from the configured PHA response. The adapter accepts only the
 supported product map and positive integer VND/lượng buy/sell values. `GoldPriceSnapshot` stores price changes with a
 content fingerprint, preventing repeated writes when a refresh returns unchanged values. Authenticated clients read
-stored latest/history data; an explicit ADMIN endpoint performs the external refresh. Scheduling and alerts are deferred.
+stored latest/history data; an explicit ADMIN endpoint performs the external refresh.
+
+### Gold alert evaluation
+
+`GoldAlert` stores user-owned absolute-price or percentage rules. Percentage thresholds use integer basis points and
+compare the selected buy/sell side with the newest snapshot at or before 24 hours before the latest price. Evaluation is
+bounded to those two snapshots. `wasMatching` provides edge triggering and `lastTriggeredAt` enforces the durable
+cooldown.
+
+BullMQ registers one deterministic 15-minute scheduler. Each job attempts a provider refresh, falls back to stored
+snapshots when refresh fails, evaluates enabled rules, and transactionally persists `GoldAlertTrigger` with its alert
+state update. Triggers are durable inputs for Milestone 9; this worker performs no notification delivery.

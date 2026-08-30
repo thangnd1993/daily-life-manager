@@ -43,3 +43,8 @@ Gold provider URLs are fixed by server configuration and cannot be supplied by c
 provider requests have a bounded timeout, and payloads are normalized through an allowlisted product map with positive
 integer validation before persistence. History ranges are restricted to 1, 7, or 30 days, and only ADMIN can trigger an
 external refresh. Failed refreshes do not delete or relabel stored data as fresh.
+
+Gold alert mutations derive ownership from the authenticated user and never accept a user ID. Supported products,
+threshold combinations, integer VND values, basis points, and cooldown bounds are validated at the API and database
+layers. Trigger history is scoped to its owner. Only ADMIN can request global evaluation; job payloads contain no URL or
+provider override. Trigger persistence does not send notifications or expose provider credentials.

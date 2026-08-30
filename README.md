@@ -21,6 +21,11 @@ products (SJC, DOJI, and PNJ), stored as integer VND per lượng. Set `GOLD_PRO
 refreshes. Latest/history endpoints continue serving stored snapshots when the provider is unavailable; prices are
 informational and may be delayed.
 
+Authenticated users can configure owned SJC, DOJI, and PNJ alerts for buy/sell prices above or below an integer VND
+threshold, or for percentage movement stored as integer basis points. A BullMQ job refreshes prices and evaluates enabled
+rules every 15 minutes. Matching edges are persisted as trigger records; push notification delivery is deferred to
+Milestone 9.
+
 ## Stack
 
 - NestJS, TypeScript, Prisma, PostgreSQL
@@ -71,4 +76,5 @@ read-only; status changes are guarded and disabling an account revokes its sessi
 
 ## Status
 
-Milestones 1–7 are complete. Alerts, notifications, and later product behavior remain pending.
+Milestones 1–7 are complete. Gold alerts remain in progress until Milestone 8 passes hosted CI; notification delivery and
+later product behavior remain pending.

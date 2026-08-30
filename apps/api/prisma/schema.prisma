@@ -40,6 +40,17 @@ enum Currency {
   VND
 }
 
+enum GoldAlertPriceSide {
+  BUY
+  SELL
+}
+
+enum GoldAlertCondition {
+  ABOVE
+  BELOW
+  PERCENT_CHANGE
+}
+
 model User {
   id                    String                @id @default(cuid())
   email                 String                @unique
@@ -57,8 +68,49 @@ model User {
   transactionCategories TransactionCategory[]
   financeTransactions   FinanceTransaction[]
   financeBudgets        FinanceBudget[]
+  goldAlerts            GoldAlert[]
+  goldAlertTriggers     GoldAlertTrigger[]
 
   @@index([status])
+}
+
+model GoldAlert {
+  id                   String             @id @default(cuid())
+  userId               String
+  productCode          String
+  priceSide            GoldAlertPriceSide
+  condition            GoldAlertCondition
+  thresholdAmount      BigInt?
+  thresholdBasisPoints Int?
+  isEnabled            Boolean            @default(true)
+  cooldownMinutes      Int                @default(60)
+  lastTriggeredAt      DateTime?
+  wasMatching          Boolean            @default(false)
+  lastEvaluatedAt      DateTime?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  user                 User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  triggers             GoldAlertTrigger[]
+
+  @@index([userId])
+  @@index([productCode, isEnabled])
+}
+
+model GoldAlertTrigger {
+  id                String             @id @default(cuid())
+  alertId           String
+  userId            String
+  productCode       String
+  observedBuyPrice  BigInt
+  observedSellPrice BigInt
+  matchedValue      String
+  condition         GoldAlertCondition
+  triggeredAt       DateTime           @default(now())
+  alert             GoldAlert          @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, triggeredAt(sort: Desc)])
+  @@index([alertId, triggeredAt(sort: Desc)])
 }
 
 model TransactionCategory {
