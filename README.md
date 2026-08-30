@@ -16,6 +16,11 @@ Monthly overall and expense-category budgets add integer-safe spent, remaining, 
 Finance analytics provide a selected-month category breakdown and a fixed six-month income/expense trend without
 forecasting or long-range reporting.
 
+Gold prices use a backend provider abstraction with a PHA adapter for a small normalized set of Vietnamese retail
+products (SJC, DOJI, and PNJ), stored as integer VND per lượng. Set `GOLD_PROVIDER_API_KEY` to enable ADMIN manual
+refreshes. Latest/history endpoints continue serving stored snapshots when the provider is unavailable; prices are
+informational and may be delayed.
+
 ## Stack
 
 - NestJS, TypeScript, Prisma, PostgreSQL
@@ -66,4 +71,5 @@ read-only; status changes are guarded and disabling an account revokes its sessi
 
 ## Status
 
-Milestones 1–6 are complete. Gold prices, alerts, notifications, and later product behavior remain pending.
+Milestones 1–6 are complete. Milestone 7 is implemented and awaiting hosted CI confirmation. Alerts, notifications, and
+later product behavior remain pending.

@@ -10,6 +10,7 @@ import { environmentSchema } from './config/environment.validation';
 import { DatabaseModule } from './database/database.module';
 import { HealthModule } from './health/health.module';
 import { FinanceModule } from './finance/finance.module';
+import { GoldModule } from './gold/gold.module';
 import { QueueModule } from './queue/queue.module';
 
 @Module({
@@ -28,6 +29,7 @@ import { QueueModule } from './queue/queue.module';
     AdminUsersModule,
     AttendanceModule,
     FinanceModule,
+    GoldModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

@@ -7,6 +7,7 @@ import 'features/auth/password_screens.dart';
 import 'features/auth/register_screen.dart';
 import 'features/home/home_screen.dart';
 import 'features/finance/finance_screen.dart';
+import 'features/gold/gold_screen.dart';
 import 'network/api_client.dart';
 
 class DailyLifeManagerApp extends StatefulWidget {
@@ -54,6 +55,7 @@ class _DailyLifeManagerAppState extends State<DailyLifeManagerApp> {
         ),
         GoRoute(path: '/', builder: (context, state) => HomeScreen(auth: auth)),
         GoRoute(path: '/finance', builder: (context, state) => FinanceScreen(api: auth.api)),
+        GoRoute(path: '/gold', builder: (context, state) => GoldScreen(api: auth.api)),
         GoRoute(
           path: '/change-password',
           builder: (context, state) => ChangePasswordScreen(api: auth.api),

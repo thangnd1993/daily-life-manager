@@ -114,4 +114,23 @@ void main() {
     expect(find.text('Transactions'), findsOneWidget);
     expect(find.text('Food'), findsWidgets);
   });
+
+  testWidgets('renders gold buy sell history range and stale state', (tester) async {
+    final api = ApiClient(tokenStore: MemoryTokenStore(), client: MockClient((request) async {
+      if (request.url.path.endsWith('/attendance/today')) return http.Response(jsonEncode({'checkedIn': false, 'record': null}), 200);
+      if (request.url.path.endsWith('/attendance')) return http.Response(jsonEncode({'items': []}), 200);
+      if (request.url.path.endsWith('/history')) return http.Response(jsonEncode({'items': [{'buyPrice': '88000000', 'sellPrice': '90000000', 'sourceTimestamp': '2026-08-29T00:00:00Z'}]}), 200);
+      return http.Response(jsonEncode([{'provider': 'pha', 'productCode': 'SJC', 'productName': 'SJC Gold', 'buyPrice': '88500000', 'sellPrice': '90500000', 'currency': 'VND', 'unit': 'LUONG', 'sourceTimestamp': '2026-08-30T00:00:00Z', 'stale': true}]), 200);
+    }));
+    final auth = AuthController(api)..status = AuthStatus.signedIn..account = const Account(id: '1', email: 'u@example.com', displayName: 'User', role: 'USER', status: 'ACTIVE');
+    await tester.pumpWidget(DailyLifeManagerApp(authController: auth));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Gold prices'));
+    await tester.pumpAndSettle();
+    expect(find.text('SJC Gold'), findsOneWidget);
+    expect(find.text('88.500.000 ₫'), findsOneWidget);
+    expect(find.text('90.500.000 ₫'), findsOneWidget);
+    expect(find.textContaining('may be delayed'), findsOneWidget);
+    expect(find.text('7D'), findsOneWidget);
+  });
 }

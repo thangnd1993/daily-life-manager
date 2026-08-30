@@ -108,4 +108,17 @@ void main() {
     expect(jsonDecode(requests[2].body)['amount'], '5000000');
     expect(requests.last.method, 'DELETE');
   });
+
+  test('maps latest gold prices and bounded history', () async {
+    final requests = <http.Request>[];
+    final api = ApiClient(tokenStore: MemoryStore(), client: MockClient((request) async {
+      requests.add(request);
+      if (request.url.path.endsWith('/history')) return http.Response(jsonEncode({'productCode': 'SJC', 'days': 7, 'items': []}), 200);
+      return http.Response(jsonEncode([{'productCode': 'SJC', 'buyPrice': '88500000', 'sellPrice': '90500000'}]), 200);
+    }));
+    expect((await api.goldPrices()).first['buyPrice'], '88500000');
+    expect((await api.goldHistory('SJC', 7))['days'], 7);
+    expect(requests.last.url.queryParameters['days'], '7');
+    expect(requests.last.url.queryParameters['limit'], '200');
+  });
 }

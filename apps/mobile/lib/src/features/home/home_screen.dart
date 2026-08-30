@@ -73,6 +73,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     ]),
             ),
           ),
+          Card(
+            elevation: 0,
+            child: ListTile(
+              leading: const Icon(Icons.auto_awesome),
+              title: const Text('Gold prices'),
+              subtitle: const Text('Latest buy, sell, and recent history'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.go('/gold'),
+            ),
+          ),
           if (error != null) Padding(padding: const EdgeInsets.all(12), child: Text(error!, style: const TextStyle(color: Colors.red))),
           const SizedBox(height: 20),
           Card(

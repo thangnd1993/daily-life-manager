@@ -25,4 +25,14 @@ export const environmentSchema = Joi.object({
   ADMIN_EMAIL: Joi.string().email().allow('').optional(),
   ADMIN_PASSWORD: Joi.string().min(12).allow('').optional(),
   ADMIN_DISPLAY_NAME: Joi.string().min(2).max(100).default('Administrator'),
+  GOLD_PROVIDER: Joi.string().valid('pha').default('pha'),
+  GOLD_PROVIDER_BASE_URL: Joi.string()
+    .uri({ scheme: ['https'] })
+    .default('https://www.pha.vn/api/v1'),
+  GOLD_PROVIDER_API_KEY: Joi.string().allow('').optional(),
+  GOLD_PROVIDER_TIMEOUT_MS: Joi.number()
+    .integer()
+    .min(500)
+    .max(15000)
+    .default(5000),
 });

@@ -38,3 +38,8 @@ Budgets derive their owner from the authenticated principal and may reference on
 Updates and deletion scope by both budget ID and owner. Database checks enforce positive amounts and valid calendar
 fields, while partial unique indexes prevent duplicate overall or category budgets under concurrent requests. Admin
 budget and analytics visibility is isolated behind a read-only ADMIN route.
+
+Gold provider URLs are fixed by server configuration and cannot be supplied by clients. The API key remains backend-only,
+provider requests have a bounded timeout, and payloads are normalized through an allowlisted product map with positive
+integer validation before persistence. History ranges are restricted to 1, 7, or 30 days, and only ADMIN can trigger an
+external refresh. Failed refreshes do not delete or relabel stored data as fresh.

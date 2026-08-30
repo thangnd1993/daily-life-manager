@@ -93,6 +93,24 @@ model FinanceBudget {
   @@index([categoryId])
 }
 
+model GoldPriceSnapshot {
+  id              String   @id @default(cuid())
+  provider        String
+  productCode     String
+  productName     String
+  buyPrice        BigInt
+  sellPrice       BigInt
+  currency        Currency @default(VND)
+  unit            String
+  sourceTimestamp DateTime
+  fetchedAt       DateTime @default(now())
+  fingerprint     String   @unique
+  createdAt       DateTime @default(now())
+
+  @@index([productCode, sourceTimestamp(sort: Desc)])
+  @@index([provider, fetchedAt(sort: Desc)])
+}
+
 model FinanceTransaction {
   id          String                 @id @default(cuid())
   userId      String

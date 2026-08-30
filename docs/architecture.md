@@ -58,3 +58,10 @@ reuses the same owner-scoped queries for read-only selected-user inspection.
 unique indexes enforce one budget for each valid scope despite nullable category semantics. Usage aggregates only
 monthly expense transactions. Analytics reuse monthly totals and add category grouping plus an oldest-to-current fixed
 six-month trend; money remains `BIGINT` until string serialization.
+
+## Gold prices
+
+`GoldPriceProvider` separates normalized domain prices from the configured PHA response. The adapter accepts only the
+supported product map and positive integer VND/lượng buy/sell values. `GoldPriceSnapshot` stores price changes with a
+content fingerprint, preventing repeated writes when a refresh returns unchanged values. Authenticated clients read
+stored latest/history data; an explicit ADMIN endpoint performs the external refresh. Scheduling and alerts are deferred.

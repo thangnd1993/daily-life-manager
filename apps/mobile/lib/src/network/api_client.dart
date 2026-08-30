@@ -66,6 +66,10 @@ class ApiClient {
   Future<void> deleteFinanceCategory(String id) async {
     await request('DELETE', 'finance/categories/$id');
   }
+  Future<List<Map<String, dynamic>>> goldPrices() async =>
+      (await request('GET', 'gold/prices') as List<dynamic>).cast<Map<String, dynamic>>();
+  Future<Map<String, dynamic>> goldHistory(String productCode, int days) async =>
+      await request('GET', 'gold/prices/${Uri.encodeComponent(productCode)}/history?days=$days&limit=200') as Map<String, dynamic>;
 
   Future<void> logout() async {
     try {
