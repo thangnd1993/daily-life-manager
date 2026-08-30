@@ -102,8 +102,6 @@ jobs:
           status=$?
           printf '%s\n' "$output"
           if [ "$status" -ne 0 ]; then
-            while IFS= read -r line; do
-              printf '::error::%s\n' "$line"
-            done <<< "$output"
+            printf '::error title=Flutter test output (base64)::%s\n' "$(printf '%s' "$output" | base64 -w0)"
           fi
           exit "$status"
