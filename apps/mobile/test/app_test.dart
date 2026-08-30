@@ -142,8 +142,11 @@ void main() {
     expect(find.textContaining('may be delayed'), findsWidgets);
     expect(find.text('7D'), findsOneWidget);
     await tester.scrollUntilVisible(find.text('Gold alerts'), 250);
+    await tester.scrollUntilVisible(find.textContaining('BUY ABOVE'), 200);
     expect(find.textContaining('BUY ABOVE 90.000.000'), findsOneWidget);
+    await tester.scrollUntilVisible(find.textContaining('2.50% movement'), 200);
     expect(find.textContaining('2.50% movement'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Recent alert activity'), 200);
     expect(find.text('Recent alert activity'), findsOneWidget);
   });
 }

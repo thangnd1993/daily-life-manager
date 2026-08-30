@@ -95,13 +95,4 @@ jobs:
           cache: true
       - run: flutter pub get
       - run: flutter analyze
-      - name: Run flutter test
-        run: |
-          set +e
-          output=$(flutter test 2>&1)
-          status=$?
-          printf '%s\n' "$output"
-          if [ "$status" -ne 0 ]; then
-            printf '::error title=Flutter test output (base64)::%s\n' "$(printf '%s' "$output" | base64 -w0)"
-          fi
-          exit "$status"
+      - run: flutter test
