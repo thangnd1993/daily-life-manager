@@ -76,5 +76,4 @@ read-only; status changes are guarded and disabling an account revokes its sessi
 
 ## Status
 
-Milestones 1–7 are complete. Gold alerts remain in progress until Milestone 8 passes hosted CI; notification delivery and
-later product behavior remain pending.
+Milestones 1–8 are complete. Notification delivery and later product behavior remain pending.
