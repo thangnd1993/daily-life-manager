@@ -125,6 +125,7 @@ void main() {
     final auth = AuthController(api)..status = AuthStatus.signedIn..account = const Account(id: '1', email: 'u@example.com', displayName: 'User', role: 'USER', status: 'ACTIVE');
     await tester.pumpWidget(DailyLifeManagerApp(authController: auth));
     await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('Gold prices'), 250);
     await tester.tap(find.text('Gold prices'));
     await tester.pumpAndSettle();
     expect(find.text('SJC Gold'), findsOneWidget);
