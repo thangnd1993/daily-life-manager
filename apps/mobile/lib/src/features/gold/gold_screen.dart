@@ -113,7 +113,11 @@ class _GoldScreenState extends State<GoldScreen> {
     )));
     controller.dispose();
     if (saved == null) return;
-    if (existing == null) await widget.api.createGoldAlert(saved); else await widget.api.updateGoldAlert(existing['id'] as String, saved);
+    if (existing == null) {
+      await widget.api.createGoldAlert(saved);
+    } else {
+      await widget.api.updateGoldAlert(existing['id'] as String, saved);
+    }
     await _loadAlerts();
   }
 
