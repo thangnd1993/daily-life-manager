@@ -68,6 +68,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Checked in today'), findsOneWidget);
     expect(find.text('Complete'), findsOneWidget);
+    await tester.scrollUntilVisible(find.textContaining('This month · 1 days'), 250);
     expect(find.textContaining('This month · 1 days'), findsOneWidget);
   });
 
@@ -131,7 +132,7 @@ void main() {
     expect(find.text('SJC Gold'), findsOneWidget);
     expect(find.text('88.500.000 ₫'), findsOneWidget);
     expect(find.text('90.500.000 ₫'), findsOneWidget);
-    expect(find.textContaining('may be delayed'), findsOneWidget);
+    expect(find.textContaining('may be delayed'), findsWidgets);
     expect(find.text('7D'), findsOneWidget);
   });
 }

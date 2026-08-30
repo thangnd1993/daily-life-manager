@@ -95,14 +95,4 @@ jobs:
           cache: true
       - run: flutter pub get
       - run: flutter analyze
-      - name: Run flutter test
-        shell: bash
-        run: |
-          set +e
-          diagnostic="$(flutter test --reporter expanded 2>&1)"
-          status=$?
-          diagnostic="${diagnostic//'%'/'%25'}"
-          diagnostic="${diagnostic//$'\n'/'%0A'}"
-          diagnostic="${diagnostic//$'\r'/'%0D'}"
-          echo "::error title=Flutter test::$diagnostic"
-          exit "$status"
+      - run: flutter test
