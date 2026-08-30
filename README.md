@@ -71,5 +71,4 @@ read-only; status changes are guarded and disabling an account revokes its sessi
 
 ## Status
 
-Milestones 1–6 are complete. Milestone 7 is implemented and awaiting hosted CI confirmation. Alerts, notifications, and
-later product behavior remain pending.
+Milestones 1–7 are complete. Alerts, notifications, and later product behavior remain pending.
