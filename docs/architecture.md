@@ -95,3 +95,21 @@ framework or expensive pervasive blur.
 For Android development against a host API, build with
 `flutter build apk --debug --dart-define=API_URL=http://10.0.2.2:3000/api`. Use a reachable LAN address instead of
 `10.0.2.2` for a physical device.
+
+## Admin dashboard and reporting (Milestone 11)
+
+`AdminDashboardModule` exposes two authenticated, active-account, `ADMIN`-only resources: a current operational summary
+and a fixed seven-day trend report. The summary uses concurrent Prisma counts, groups, and bounded current-month queries
+for account status, attendance participation, finance activity, overall-budget usage, Gold Alert activity, and push
+delivery health. The trend response always contains seven oldest-to-newest UTC daily buckets and at most five safe recent
+records per supported activity type. Reporting windows are server-controlled; the API accepts no arbitrary fields,
+sorting, or date ranges.
+
+System-level finance reporting is deliberately coarse. It returns transaction counts, participant counts, aggregate VND
+income/expense totals, and counts of overall budgets and exceeded overall budgets. It never returns transaction
+descriptions, per-user finance totals, or spending rankings. Recent activity is derived directly from registrations,
+attendance, and Gold Alert triggers; it is not a generalized audit log.
+
+The guarded Angular dashboard loads the summary and trend resources independently. Responsive Liquid Glass cards,
+text-labelled CSS bars, zero/empty states, and panel-level retries keep the page readable without a chart dependency or a
+single all-or-nothing loading state. Existing selected-user management remains separate and unchanged.

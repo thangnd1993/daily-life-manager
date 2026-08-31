@@ -1,0 +1,274 @@
+<section class="dashboard-heading">
+  <div>
+    <p class="eyebrow">Operations overview</p>
+    <h1>Admin dashboard</h1>
+    <p>Account activity and product health across short, bounded reporting windows.</p>
+  </div>
+  @if (summary$ | async; as state) {
+    @if (state.data) {
+      <p class="updated">Updated {{ state.data.generatedAt | date: 'medium' }}</p>
+    }
+  }
+</section>
+
+@if (summary$ | async; as state) {
+  @if (state.loading) {
+    <section class="panel state-panel" aria-live="polite">
+      <span class="spinner"></span>
+      <p>Loading dashboard summary…</p>
+    </section>
+  } @else if (state.error) {
+    <section class="panel state-panel error" role="alert">
+      <h2>Summary is temporarily unavailable</h2>
+      <p>The trend report can still load independently.</p>
+      <button type="button" (click)="retrySummary()">Retry summary</button>
+    </section>
+  } @else {
+    @if (state.data; as summary) {
+      <section class="primary-grid" aria-label="Primary metrics">
+        <article class="metric-card accent-blue">
+          <span>Total users</span>
+          <strong>{{ summary.users.total }}</strong>
+          <small>{{ summary.users.active }} active accounts</small>
+        </article>
+        <article class="metric-card accent-green">
+          <span>Today's check-ins</span>
+          <strong>{{ summary.attendance.checkInsToday }}</strong>
+          <small>{{ summary.attendance.participantsThisMonth }} participants this month</small>
+        </article>
+        <article class="metric-card accent-gold">
+          <span>Active gold alerts</span>
+          <strong>{{ summary.gold.activeAlerts }}</strong>
+          <small>{{ summary.gold.usersWithActiveAlerts }} users monitoring prices</small>
+        </article>
+        <article class="metric-card accent-violet">
+          <span>Notifications · 7 days</span>
+          <strong>{{ summary.notifications.createdLast7Days }}</strong>
+          <small>{{ summary.notifications.sentLast7Days }} sent successfully</small>
+        </article>
+      </section>
+
+      <section class="detail-grid">
+        <article class="panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Accounts</p>
+              <h2>User health</h2>
+            </div>
+            <span class="status healthy">{{ summary.users.active }} active</span>
+          </div>
+          <dl class="stat-list">
+            <div>
+              <dt>Inactive</dt>
+              <dd>{{ summary.users.inactive }}</dd>
+            </div>
+            <div>
+              <dt>Suspended</dt>
+              <dd>{{ summary.users.suspended }}</dd>
+            </div>
+            <div>
+              <dt>Administrators</dt>
+              <dd>{{ summary.users.admins }}</dd>
+            </div>
+            <div>
+              <dt>Registered · 7 days</dt>
+              <dd>{{ summary.users.registeredLast7Days }}</dd>
+            </div>
+            <div>
+              <dt>Registered · 30 days</dt>
+              <dd>{{ summary.users.registeredLast30Days }}</dd>
+            </div>
+            <div>
+              <dt>Recent login · 30 days</dt>
+              <dd>{{ summary.users.recentlyActive }}</dd>
+            </div>
+          </dl>
+        </article>
+
+        <article class="panel finance-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Current month</p>
+              <h2>Finance activity</h2>
+            </div>
+            <span class="status neutral">Aggregate only</span>
+          </div>
+          <div class="money-grid">
+            <div>
+              <span>Income recorded</span><strong>{{ vnd(summary.finance.totalIncomeThisMonth) }}</strong>
+            </div>
+            <div>
+              <span>Expense recorded</span><strong>{{ vnd(summary.finance.totalExpenseThisMonth) }}</strong>
+            </div>
+          </div>
+          <dl class="stat-list compact">
+            <div>
+              <dt>Transactions</dt>
+              <dd>{{ summary.finance.transactionCountThisMonth }}</dd>
+            </div>
+            <div>
+              <dt>Active users</dt>
+              <dd>{{ summary.finance.activeUsersThisMonth }}</dd>
+            </div>
+            <div>
+              <dt>Overall budgets</dt>
+              <dd>{{ summary.finance.usersWithOverallBudget }}</dd>
+            </div>
+            <div>
+              <dt>Over overall budget</dt>
+              <dd>{{ summary.finance.usersOverOverallBudget }}</dd>
+            </div>
+          </dl>
+        </article>
+
+        <article class="panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Delivery health</p>
+              <h2>Push notifications</h2>
+            </div>
+            <span class="status" [class.warning]="summary.notifications.failedLast7Days > 0">
+              {{ summary.notifications.failedLast7Days > 0 ? 'Needs review' : 'Healthy' }}
+            </span>
+          </div>
+          <div class="delivery-row">
+            <div class="delivery sent">
+              <strong>{{ summary.notifications.sentLast7Days }}</strong
+              ><span>Sent</span>
+            </div>
+            <div class="delivery partial">
+              <strong>{{ summary.notifications.partialLast7Days }}</strong
+              ><span>Partial</span>
+            </div>
+            <div class="delivery failed">
+              <strong>{{ summary.notifications.failedLast7Days }}</strong
+              ><span>Failed</span>
+            </div>
+          </div>
+          <p class="supporting">
+            {{ summary.notifications.activeDevices }} active devices ·
+            {{ summary.notifications.inactiveDevices }} inactive
+          </p>
+        </article>
+
+        <article class="panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Gold monitoring</p>
+              <h2>Alert activity</h2>
+            </div>
+            <span class="status neutral">{{ summary.gold.provider || 'No provider data' }}</span>
+          </div>
+          <dl class="stat-list compact">
+            <div>
+              <dt>Triggers · 24 hours</dt>
+              <dd>{{ summary.gold.triggersLast24Hours }}</dd>
+            </div>
+            <div>
+              <dt>Triggers · 7 days</dt>
+              <dd>{{ summary.gold.triggersLast7Days }}</dd>
+            </div>
+            <div>
+              <dt>Latest snapshot</dt>
+              <dd>{{ summary.gold.latestSnapshotAt ? (summary.gold.latestSnapshotAt | date: 'short') : '—' }}</dd>
+            </div>
+          </dl>
+        </article>
+      </section>
+    }
+  }
+}
+
+@if (trends$ | async; as state) {
+  @if (state.loading) {
+    <section class="panel state-panel compact-state" aria-live="polite"><p>Loading seven-day trends…</p></section>
+  } @else if (state.error) {
+    <section class="panel state-panel error compact-state" role="alert">
+      <h2>Trends could not be loaded</h2>
+      <button type="button" (click)="retryTrends()">Retry trends</button>
+    </section>
+  } @else {
+    @if (state.data; as trends) {
+      <section class="report-grid">
+        <article class="panel trends-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">{{ trends.startDate | date: 'MMM d' }} – {{ trends.endDate | date: 'MMM d' }}</p>
+              <h2>Seven-day activity</h2>
+            </div>
+            <span class="legend"><i></i> Attendance</span>
+          </div>
+          <div class="chart" role="img" aria-label="Daily attendance check-in counts for the last seven days">
+            @for (point of trends.attendance; track point.date) {
+              <div class="bar-column">
+                <span class="bar-value">{{ point.count }}</span>
+                <span class="bar" [style.height.%]="barHeight(point, trends.attendance)"></span>
+                <span class="bar-label">{{ point.date | date: 'EEE' }}</span>
+              </div>
+            }
+          </div>
+          <div class="trend-totals">
+            <span
+              >Registrations <strong>{{ trends.registrations[6].count }} today</strong></span
+            >
+            <span
+              >Gold triggers <strong>{{ trends.goldAlertTriggers[6].count }} today</strong></span
+            >
+            <span
+              >Notifications <strong>{{ trends.notifications[6].count }} today</strong></span
+            >
+          </div>
+        </article>
+
+        <article class="panel activity-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Safe record summaries</p>
+              <h2>Recent activity</h2>
+            </div>
+          </div>
+          @if (
+            trends.recentActivity.registrations.length ||
+            trends.recentActivity.attendance.length ||
+            trends.recentActivity.goldAlertTriggers.length
+          ) {
+            <ul class="activity-list">
+              @for (item of trends.recentActivity.registrations; track item.createdAt) {
+                <li>
+                  <span class="activity-icon user">U</span>
+                  <div>
+                    <strong>{{ item.displayName }}</strong
+                    ><small>Registered {{ item.createdAt | date: 'short' }}</small>
+                  </div>
+                </li>
+              }
+              @for (item of trends.recentActivity.attendance; track item.checkedInAt) {
+                <li>
+                  <span class="activity-icon attendance">A</span>
+                  <div>
+                    <strong>{{ item.displayName }}</strong
+                    ><small>Checked in {{ item.checkedInAt | date: 'short' }}</small>
+                  </div>
+                </li>
+              }
+              @for (item of trends.recentActivity.goldAlertTriggers; track item.triggeredAt) {
+                <li>
+                  <span class="activity-icon gold">G</span>
+                  <div>
+                    <strong>{{ item.productCode }} alert</strong
+                    ><small>Triggered {{ item.triggeredAt | date: 'short' }}</small>
+                  </div>
+                </li>
+              }
+            </ul>
+          } @else {
+            <div class="empty-state">
+              <strong>No recent activity</strong>
+              <p>New events will appear here as the system is used.</p>
+            </div>
+          }
+        </article>
+      </section>
+    }
+  }
+}

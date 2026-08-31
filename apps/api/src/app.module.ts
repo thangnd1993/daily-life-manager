@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AdminUsersModule } from './admin-users/admin-users.module';
+import { AdminDashboardModule } from './admin-dashboard/admin-dashboard.module';
 import { AttendanceModule } from './attendance/attendance.module';
 import { AuthModule } from './auth/auth.module';
 import { appConfig } from './config/app.config';
@@ -28,6 +29,7 @@ import { PushModule } from './push/push.module';
     QueueModule,
     HealthModule,
     AuthModule,
+    AdminDashboardModule,
     AdminUsersModule,
     AttendanceModule,
     FinanceModule,

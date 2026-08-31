@@ -1,7 +1,8 @@
 <header class="topbar">
-  <a class="brand" routerLink="/users"><span class="brand-mark">D</span>Daily Life Manager</a>
+  <a class="brand" routerLink="/dashboard"><span class="brand-mark">D</span>Daily Life Manager</a>
   @if (auth.isAuthenticated()) {
     <nav aria-label="Administration">
+      <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
       <a routerLink="/users">Users</a>
       <button class="logout" type="button" (click)="logout()">Sign out</button>
     </nav>
