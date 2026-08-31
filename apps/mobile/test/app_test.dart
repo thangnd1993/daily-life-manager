@@ -62,14 +62,15 @@ void main() {
         displayName: 'User',
         role: 'USER',
         status: 'ACTIVE',
-      );
+    );
     await tester.pumpWidget(DailyLifeManagerApp(authController: auth));
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    await tester.pump();
+    await tester.tap(find.text('Attendance'));
     await tester.pumpAndSettle();
     expect(find.text('Checked in today'), findsOneWidget);
     expect(find.text('Complete'), findsOneWidget);
-    await tester.scrollUntilVisible(find.textContaining('This month · 1 days'), 250);
-    expect(find.textContaining('This month · 1 days'), findsOneWidget);
+    expect(find.text('This month'), findsOneWidget);
+    expect(find.text('2026-08-29'), findsOneWidget);
   });
 
   testWidgets('opens finance overview with string VND totals and transactions', (tester) async {
@@ -102,7 +103,7 @@ void main() {
       ..account = const Account(id: '1', email: 'u@example.com', displayName: 'User', role: 'USER', status: 'ACTIVE');
     await tester.pumpWidget(DailyLifeManagerApp(authController: auth));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Personal finance'));
+    await tester.tap(find.text('Finance'));
     await tester.pumpAndSettle();
     expect(find.text('1.000.000 ₫'), findsOneWidget);
     expect(find.text('Overall expenses'), findsOneWidget);
@@ -133,8 +134,7 @@ void main() {
     final auth = AuthController(api)..status = AuthStatus.signedIn..account = const Account(id: '1', email: 'u@example.com', displayName: 'User', role: 'USER', status: 'ACTIVE');
     await tester.pumpWidget(DailyLifeManagerApp(authController: auth));
     await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(find.text('Gold prices'), 250);
-    await tester.tap(find.text('Gold prices'));
+    await tester.tap(find.text('Gold'));
     await tester.pumpAndSettle();
     expect(find.text('SJC Gold'), findsOneWidget);
     expect(find.text('88.500.000 ₫'), findsOneWidget);
@@ -148,5 +148,48 @@ void main() {
     expect(find.textContaining('2.50% movement'), findsOneWidget);
     await tester.scrollUntilVisible(find.text('Recent alert activity'), 200);
     expect(find.text('Recent alert activity'), findsOneWidget);
+  });
+
+  testWidgets('home composes cross-feature summaries and exposes primary navigation', (tester) async {
+    final api = ApiClient(tokenStore: MemoryTokenStore(), client: MockClient((request) async {
+      final path = request.url.path;
+      if (path.endsWith('/attendance/today')) return http.Response(jsonEncode({'checkedIn': true, 'record': {}}), 200);
+      if (path.endsWith('/finance/summary')) return http.Response(jsonEncode({'totalIncome': '1000000', 'totalExpense': '250000', 'netBalance': '750000'}), 200);
+      if (path.endsWith('/finance/budgets')) return http.Response(jsonEncode([{'id': 'budget-1'}]), 200);
+      if (path.endsWith('/gold/prices')) return http.Response(jsonEncode([{'productName': 'SJC Gold', 'buyPrice': '90000000', 'sellPrice': '92000000', 'stale': false}]), 200);
+      return http.Response(jsonEncode([{'id': 'alert-1', 'isEnabled': true}]), 200);
+    }));
+    final auth = AuthController(api)..status = AuthStatus.signedIn..account = const Account(id: '1', email: 'u@example.com', displayName: 'User', role: 'USER', status: 'ACTIVE');
+    await tester.pumpWidget(DailyLifeManagerApp(authController: auth));
+    await tester.pumpAndSettle();
+    expect(find.text('Checked in today'), findsOneWidget);
+    expect(find.text('750.000 ₫'), findsOneWidget);
+    expect(find.text('1 active'), findsOneWidget);
+    expect(find.text('SJC Gold'), findsOneWidget);
+    for (final destination in ['Home', 'Attendance', 'Finance', 'Gold', 'Account']) {
+      expect(find.text(destination), findsOneWidget);
+    }
+  });
+
+  testWidgets('home error is retryable and account logout returns to sign in', (tester) async {
+    final api = ApiClient(tokenStore: MemoryTokenStore(), client: MockClient((request) async {
+      if (request.url.path.endsWith('/auth/logout')) return http.Response('', 204);
+      return http.Response('{}', 503);
+    }));
+    final auth = AuthController(api)..status = AuthStatus.signedIn..account = const Account(id: '1', email: 'u@example.com', displayName: 'User', role: 'USER', status: 'ACTIVE');
+    await tester.pumpWidget(DailyLifeManagerApp(authController: auth));
+    await tester.pumpAndSettle();
+    expect(find.text('Overview unavailable'), findsOneWidget);
+    expect(find.text('Try again'), findsOneWidget);
+    await tester.tap(find.text('Account'));
+    await tester.pumpAndSettle();
+    expect(find.text('u@example.com'), findsOneWidget);
+    expect(find.text('Change password'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Sign out'), 250);
+    await tester.tap(find.text('Sign out'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Sign out'));
+    await tester.pumpAndSettle();
+    expect(find.text('Sign in'), findsWidgets);
   });
 }

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import '../../network/api_client.dart';
 
 class FinanceScreen extends StatefulWidget {
@@ -184,8 +183,7 @@ class _FinanceScreenState extends State<FinanceScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: const Color(0xffeef4fb),
-    appBar: AppBar(title: const Text('Personal finance'), leading: IconButton(onPressed: () => context.go('/'), icon: const Icon(Icons.arrow_back)), actions: [IconButton(onPressed: _manageCategories, tooltip: 'Categories', icon: const Icon(Icons.category_outlined))]),
+    appBar: AppBar(title: const Text('Finance'), automaticallyImplyLeading: false, actions: [IconButton(onPressed: _manageCategories, tooltip: 'Categories', icon: const Icon(Icons.category_outlined))]),
     floatingActionButton: FloatingActionButton.extended(onPressed: categories.isEmpty ? null : () => _editTransaction(), icon: const Icon(Icons.add), label: const Text('Add')),
     body: RefreshIndicator(onRefresh: _load, child: ListView(padding: const EdgeInsets.all(20), children: [
       Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [IconButton(onPressed: () => _changeMonth(-1), icon: const Icon(Icons.chevron_left)), Text('${month.month}/${month.year}', style: Theme.of(context).textTheme.titleLarge), IconButton(onPressed: () => _changeMonth(1), icon: const Icon(Icons.chevron_right))]),

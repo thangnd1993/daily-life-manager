@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import '../../network/api_client.dart';
 
 class GoldScreen extends StatefulWidget {
@@ -123,8 +122,7 @@ class _GoldScreenState extends State<GoldScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: const Color(0xfff4f0e8),
-    appBar: AppBar(backgroundColor: Colors.transparent, title: const Text('Gold prices'), leading: IconButton(onPressed: () => context.go('/'), icon: const Icon(Icons.arrow_back))),
+    appBar: AppBar(title: const Text('Gold'), automaticallyImplyLeading: false),
     body: RefreshIndicator(onRefresh: _loadLatest, child: ListView(padding: const EdgeInsets.all(20), children: [
       if (loading) const Padding(padding: EdgeInsets.all(48), child: Center(child: CircularProgressIndicator())),
       if (error != null) Card(child: Padding(padding: const EdgeInsets.all(20), child: Text(error!, style: const TextStyle(color: Colors.red)))),

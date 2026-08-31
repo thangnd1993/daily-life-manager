@@ -80,4 +80,18 @@ state update. Triggers are durable inputs for Milestone 9; this worker performs 
 
 Gold Alert evaluation commits `GoldAlertTrigger` first. It then idempotently creates one `Notification` and enqueues a deterministic BullMQ delivery job. The worker creates one `NotificationDelivery` per active `PushDevice`, calls the FCM adapter, and aggregates `SENT`, `PARTIAL`, or `FAILED`. No active devices is a deterministic `FAILED` outcome. Transient provider failures use four bounded exponential-backoff attempts; permanent invalid-token failures deactivate only that device.
 
-The Flutter project currently has no Android/iOS host projects. Its Dart push boundary, auth lifecycle, registration, token refresh, logout deactivation, permission denial, and Gold Alert tap routing are implemented and unit-testable. Real Firebase initialization belongs in a platform-backed `PushProvider` after native host projects are intentionally added.
+The Flutter project has an Android host but no production Firebase configuration. Its Dart push boundary, auth lifecycle,
+registration, token refresh, logout deactivation, permission denial, and Gold Alert tap routing are implemented and
+unit-testable. Real Firebase initialization belongs in a platform-backed `PushProvider` after native Firebase setup.
+
+## Mobile application shell (Milestone 10)
+
+The authenticated Flutter app uses a state-preserving bottom navigation shell with five primary destinations: Home,
+Attendance, Finance, Gold, and Account. Home composes small summaries from existing endpoints; it does not introduce a
+dashboard API. Gold Alerts remain within Gold, while account security actions are pushed above the shell. Shared theme,
+glass-card, status, loading, empty, and retry primitives provide a consistent light-theme experience without adding a UI
+framework or expensive pervasive blur.
+
+For Android development against a host API, build with
+`flutter build apk --debug --dart-define=API_URL=http://10.0.2.2:3000/api`. Use a reachable LAN address instead of
+`10.0.2.2` for a physical device.
