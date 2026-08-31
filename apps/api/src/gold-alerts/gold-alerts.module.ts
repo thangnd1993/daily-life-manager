@@ -6,9 +6,10 @@ import {
   GoldAlertsController,
 } from './gold-alerts.controller';
 import { GoldAlertsService } from './gold-alerts.service';
+import { PushModule } from '../push/push.module';
 
 @Module({
-  imports: [GoldModule],
+  imports: [GoldModule, PushModule],
   controllers: [GoldAlertsController, AdminGoldAlertsController],
   providers: [GoldAlertsService, GoldAlertJobsService],
 })

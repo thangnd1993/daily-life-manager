@@ -1,0 +1,17 @@
+CREATE TYPE "PushPlatform" AS ENUM ('IOS', 'ANDROID');
+CREATE TYPE "NotificationType" AS ENUM ('GOLD_ALERT');
+CREATE TYPE "NotificationStatus" AS ENUM ('PENDING', 'SENT', 'FAILED', 'PARTIAL');
+CREATE TYPE "NotificationDeliveryStatus" AS ENUM ('PENDING', 'SENT', 'FAILED');
+CREATE TABLE "PushDevice" ("id" TEXT NOT NULL, "userId" TEXT NOT NULL, "platform" "PushPlatform" NOT NULL, "pushToken" TEXT NOT NULL, "isActive" BOOLEAN NOT NULL DEFAULT true, "lastSeenAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL, CONSTRAINT "PushDevice_pkey" PRIMARY KEY ("id"));
+CREATE TABLE "Notification" ("id" TEXT NOT NULL, "userId" TEXT NOT NULL, "type" "NotificationType" NOT NULL, "title" TEXT NOT NULL, "body" TEXT NOT NULL, "data" JSONB NOT NULL, "status" "NotificationStatus" NOT NULL DEFAULT 'PENDING', "goldAlertTriggerId" TEXT NOT NULL, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "sentAt" TIMESTAMP(3), "failedAt" TIMESTAMP(3), CONSTRAINT "Notification_pkey" PRIMARY KEY ("id"));
+CREATE TABLE "NotificationDelivery" ("id" TEXT NOT NULL, "notificationId" TEXT NOT NULL, "deviceId" TEXT NOT NULL, "status" "NotificationDeliveryStatus" NOT NULL DEFAULT 'PENDING', "providerMessageId" TEXT, "attemptCount" INTEGER NOT NULL DEFAULT 0, "lastAttemptAt" TIMESTAMP(3), "errorCode" TEXT, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL, CONSTRAINT "NotificationDelivery_pkey" PRIMARY KEY ("id"));
+CREATE UNIQUE INDEX "PushDevice_pushToken_key" ON "PushDevice"("pushToken");
+CREATE INDEX "PushDevice_userId_isActive_idx" ON "PushDevice"("userId", "isActive");
+CREATE UNIQUE INDEX "Notification_goldAlertTriggerId_key" ON "Notification"("goldAlertTriggerId");
+CREATE INDEX "Notification_userId_createdAt_idx" ON "Notification"("userId", "createdAt" DESC);
+CREATE UNIQUE INDEX "NotificationDelivery_notificationId_deviceId_key" ON "NotificationDelivery"("notificationId", "deviceId");
+ALTER TABLE "PushDevice" ADD CONSTRAINT "PushDevice_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Notification" ADD CONSTRAINT "Notification_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Notification" ADD CONSTRAINT "Notification_goldAlertTriggerId_fkey" FOREIGN KEY ("goldAlertTriggerId") REFERENCES "GoldAlertTrigger"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "NotificationDelivery" ADD CONSTRAINT "NotificationDelivery_notificationId_fkey" FOREIGN KEY ("notificationId") REFERENCES "Notification"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "NotificationDelivery" ADD CONSTRAINT "NotificationDelivery_deviceId_fkey" FOREIGN KEY ("deviceId") REFERENCES "PushDevice"("id") ON DELETE CASCADE ON UPDATE CASCADE;

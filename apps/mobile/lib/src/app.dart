@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:go_router/go_router.dart';
 import 'auth/auth_controller.dart';
 import 'auth/token_store.dart';
@@ -9,6 +10,7 @@ import 'features/home/home_screen.dart';
 import 'features/finance/finance_screen.dart';
 import 'features/gold/gold_screen.dart';
 import 'network/api_client.dart';
+import 'push/push_service.dart';
 
 class DailyLifeManagerApp extends StatefulWidget {
   const DailyLifeManagerApp({this.authController, super.key});
@@ -25,7 +27,16 @@ class _DailyLifeManagerAppState extends State<DailyLifeManagerApp> {
   @override
   void initState() {
     super.initState();
-    auth = widget.authController ?? AuthController(ApiClient(tokenStore: SecureTokenStore()));
+    if (widget.authController != null) {
+      auth = widget.authController!;
+    } else {
+      final api = ApiClient(tokenStore: SecureTokenStore());
+      final push = PushService(api, UnavailablePushProvider(),
+          platform:
+              defaultTargetPlatform == TargetPlatform.iOS ? 'IOS' : 'ANDROID',
+          onGoldAlertTap: () => router.go('/gold'));
+      auth = AuthController(api, push: push);
+    }
     router = GoRouter(
       refreshListenable: auth,
       initialLocation: '/',
@@ -35,16 +46,25 @@ class _DailyLifeManagerAppState extends State<DailyLifeManagerApp> {
             state.matchedLocation == '/register' ||
             state.matchedLocation == '/forgot-password' ||
             state.matchedLocation == '/reset-password';
-        if (auth.status == AuthStatus.signedOut) return publicRoute ? null : '/login';
-        return publicRoute || state.matchedLocation == '/restoring' ? '/' : null;
+        if (auth.status == AuthStatus.signedOut) {
+          return publicRoute ? null : '/login';
+        }
+        return publicRoute || state.matchedLocation == '/restoring'
+            ? '/'
+            : null;
       },
       routes: [
         GoRoute(
           path: '/restoring',
-          builder: (context, state) => const Scaffold(body: Center(child: CircularProgressIndicator())),
+          builder: (context, state) =>
+              const Scaffold(body: Center(child: CircularProgressIndicator())),
         ),
-        GoRoute(path: '/login', builder: (context, state) => LoginScreen(auth: auth)),
-        GoRoute(path: '/register', builder: (context, state) => RegisterScreen(auth: auth)),
+        GoRoute(
+            path: '/login',
+            builder: (context, state) => LoginScreen(auth: auth)),
+        GoRoute(
+            path: '/register',
+            builder: (context, state) => RegisterScreen(auth: auth)),
         GoRoute(
           path: '/forgot-password',
           builder: (context, state) => ForgotPasswordScreen(api: auth.api),
@@ -54,8 +74,12 @@ class _DailyLifeManagerAppState extends State<DailyLifeManagerApp> {
           builder: (context, state) => ResetPasswordScreen(api: auth.api),
         ),
         GoRoute(path: '/', builder: (context, state) => HomeScreen(auth: auth)),
-        GoRoute(path: '/finance', builder: (context, state) => FinanceScreen(api: auth.api)),
-        GoRoute(path: '/gold', builder: (context, state) => GoldScreen(api: auth.api)),
+        GoRoute(
+            path: '/finance',
+            builder: (context, state) => FinanceScreen(api: auth.api)),
+        GoRoute(
+            path: '/gold',
+            builder: (context, state) => GoldScreen(api: auth.api)),
         GoRoute(
           path: '/change-password',
           builder: (context, state) => ChangePasswordScreen(api: auth.api),
@@ -75,7 +99,9 @@ class _DailyLifeManagerAppState extends State<DailyLifeManagerApp> {
   @override
   Widget build(BuildContext context) => MaterialApp.router(
         title: 'Daily Life Manager',
-        theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xff102a43))),
+        theme: ThemeData(
+            colorScheme:
+                ColorScheme.fromSeed(seedColor: const Color(0xff102a43))),
         routerConfig: router,
       );
 }

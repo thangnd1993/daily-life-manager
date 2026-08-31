@@ -51,6 +51,28 @@ enum GoldAlertCondition {
   PERCENT_CHANGE
 }
 
+enum PushPlatform {
+  IOS
+  ANDROID
+}
+
+enum NotificationType {
+  GOLD_ALERT
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+  PARTIAL
+}
+
+enum NotificationDeliveryStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
 model User {
   id                    String                @id @default(cuid())
   email                 String                @unique
@@ -70,6 +92,8 @@ model User {
   financeBudgets        FinanceBudget[]
   goldAlerts            GoldAlert[]
   goldAlertTriggers     GoldAlertTrigger[]
+  pushDevices           PushDevice[]
+  notifications         Notification[]
 
   @@index([status])
 }
@@ -108,9 +132,61 @@ model GoldAlertTrigger {
   triggeredAt       DateTime           @default(now())
   alert             GoldAlert          @relation(fields: [alertId], references: [id], onDelete: Cascade)
   user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  notification      Notification?
 
   @@index([userId, triggeredAt(sort: Desc)])
   @@index([alertId, triggeredAt(sort: Desc)])
+}
+
+model PushDevice {
+  id         String                 @id @default(cuid())
+  userId     String
+  platform   PushPlatform
+  pushToken  String                 @unique
+  isActive   Boolean                @default(true)
+  lastSeenAt DateTime               @default(now())
+  createdAt  DateTime               @default(now())
+  updatedAt  DateTime               @updatedAt
+  user       User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deliveries NotificationDelivery[]
+
+  @@index([userId, isActive])
+}
+
+model Notification {
+  id                 String                 @id @default(cuid())
+  userId             String
+  type               NotificationType
+  title              String
+  body               String
+  data               Json
+  status             NotificationStatus     @default(PENDING)
+  goldAlertTriggerId String                 @unique
+  createdAt          DateTime               @default(now())
+  sentAt             DateTime?
+  failedAt           DateTime?
+  user               User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goldAlertTrigger   GoldAlertTrigger       @relation(fields: [goldAlertTriggerId], references: [id], onDelete: Cascade)
+  deliveries         NotificationDelivery[]
+
+  @@index([userId, createdAt(sort: Desc)])
+}
+
+model NotificationDelivery {
+  id                String                     @id @default(cuid())
+  notificationId    String
+  deviceId          String
+  status            NotificationDeliveryStatus @default(PENDING)
+  providerMessageId String?
+  attemptCount      Int                        @default(0)
+  lastAttemptAt     DateTime?
+  errorCode         String?
+  createdAt         DateTime                   @default(now())
+  updatedAt         DateTime                   @updatedAt
+  notification      Notification               @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  device            PushDevice                 @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@unique([notificationId, deviceId])
 }
 
 model TransactionCategory {

@@ -76,3 +76,8 @@ cooldown.
 BullMQ registers one deterministic 15-minute scheduler. Each job attempts a provider refresh, falls back to stored
 snapshots when refresh fails, evaluates enabled rules, and transactionally persists `GoldAlertTrigger` with its alert
 state update. Triggers are durable inputs for Milestone 9; this worker performs no notification delivery.
+# Push notifications (Milestone 9)
+
+Gold Alert evaluation commits `GoldAlertTrigger` first. It then idempotently creates one `Notification` and enqueues a deterministic BullMQ delivery job. The worker creates one `NotificationDelivery` per active `PushDevice`, calls the FCM adapter, and aggregates `SENT`, `PARTIAL`, or `FAILED`. No active devices is a deterministic `FAILED` outcome. Transient provider failures use four bounded exponential-backoff attempts; permanent invalid-token failures deactivate only that device.
+
+The Flutter project currently has no Android/iOS host projects. Its Dart push boundary, auth lifecycle, registration, token refresh, logout deactivation, permission denial, and Gold Alert tap routing are implemented and unit-testable. Real Firebase initialization belongs in a platform-backed `PushProvider` after native host projects are intentionally added.

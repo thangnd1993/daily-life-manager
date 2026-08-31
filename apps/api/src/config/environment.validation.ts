@@ -35,4 +35,5 @@ export const environmentSchema = Joi.object({
     .min(500)
     .max(15000)
     .default(5000),
+  FIREBASE_SERVICE_ACCOUNT_JSON: Joi.string().allow('').optional(),
 });

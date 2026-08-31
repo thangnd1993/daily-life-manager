@@ -31,9 +31,16 @@ describe('GoldAlertsService', () => {
     goldPriceSnapshot: { findFirst: jest.fn() },
     $transaction: jest.fn(),
   };
-  const service = new GoldAlertsService(prisma as never);
+  const notifications = { ensureGoldAlert: jest.fn() };
+  const service = new GoldAlertsService(
+    prisma as never,
+    notifications as never,
+  );
 
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    prisma.goldAlertTrigger.findMany.mockResolvedValue([]);
+  });
 
   it('creates absolute and percentage alerts with integer-safe thresholds', async () => {
     prisma.goldAlert.create

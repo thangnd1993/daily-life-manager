@@ -83,6 +83,11 @@ class ApiClient {
   Future<void> deleteGoldAlert(String id) async {
     await request('DELETE', 'gold/alerts/$id');
   }
+  Future<Map<String, dynamic>> registerPushDevice(String platform, String pushToken) async =>
+      await request('POST', 'push/devices', body: {'platform': platform, 'pushToken': pushToken}) as Map<String, dynamic>;
+  Future<void> deactivatePushDevice(String id) async {
+    await request('DELETE', 'push/devices/$id');
+  }
 
   Future<void> logout() async {
     try {

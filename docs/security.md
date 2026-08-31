@@ -48,3 +48,8 @@ Gold alert mutations derive ownership from the authenticated user and never acce
 threshold combinations, integer VND values, basis points, and cooldown bounds are validated at the API and database
 layers. Trigger history is scoped to its owner. Only ADMIN can request global evaluation; job payloads contain no URL or
 provider override. Trigger persistence does not send notifications or expose provider credentials.
+# Push notification security
+
+Device ownership always comes from JWT identity; the API accepts no `userId`. Tokens are unique, bounded to 20–4096 characters, never returned by list/register responses, and reassigned deterministically on legitimate rotation. Device mutation is owner-scoped. Notification payloads are small, server-generated Gold Alert fields, source triggers and per-device deliveries have database uniqueness constraints, and invalid tokens are deactivated. Firebase Admin credentials remain backend-only and are never logged.
+
+Production uses `FIREBASE_SERVICE_ACCOUNT_JSON` containing the service-account JSON. When absent, unrelated API features still start and pending notifications fail safely without exposing credential/provider details. Never commit service-account JSON, `google-services.json`, or `GoogleService-Info.plist`.

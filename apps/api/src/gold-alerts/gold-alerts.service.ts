@@ -6,10 +6,14 @@ import {
 import { GoldAlertCondition, GoldAlertPriceSide } from '@prisma/client';
 import { PrismaService } from '../database/prisma.service';
 import { CreateGoldAlertDto, UpdateGoldAlertDto } from './dto/gold-alert.dto';
+import { NotificationsService } from '../push/notifications.service';
 
 @Injectable()
 export class GoldAlertsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   async list(userId: string) {
     const alerts = await this.prisma.goldAlert.findMany({
@@ -114,7 +118,7 @@ export class GoldAlertsService {
         now.getTime() - alert.lastTriggeredAt.getTime() >=
           alert.cooldownMinutes * 60_000;
       if (matches && !alert.wasMatching && cooldownOver) {
-        await this.prisma.$transaction([
+        const [trigger] = await this.prisma.$transaction([
           this.prisma.goldAlertTrigger.create({
             data: {
               alertId: alert.id,
@@ -136,6 +140,11 @@ export class GoldAlertsService {
             },
           }),
         ]);
+        try {
+          await this.notifications.ensureGoldAlert(trigger.id);
+        } catch {
+          /* durable trigger is authoritative; a later reconciliation may retry */
+        }
         triggered++;
       } else {
         await this.prisma.goldAlert.update({
@@ -144,7 +153,24 @@ export class GoldAlertsService {
         });
       }
     }
+    await this.reconcileNotifications();
     return { evaluated: alerts.length, triggered, evaluatedAt: now };
+  }
+
+  private async reconcileNotifications() {
+    const missing = await this.prisma.goldAlertTrigger.findMany({
+      where: { notification: null },
+      orderBy: { triggeredAt: 'asc' },
+      take: 100,
+      select: { id: true },
+    });
+    for (const trigger of missing) {
+      try {
+        await this.notifications.ensureGoldAlert(trigger.id);
+      } catch {
+        // The next existing Gold Alert evaluation retries without affecting triggers.
+      }
+    }
   }
 
   private data(dto: CreateGoldAlertDto) {

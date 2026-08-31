@@ -13,6 +13,7 @@ import { FinanceModule } from './finance/finance.module';
 import { GoldModule } from './gold/gold.module';
 import { GoldAlertsModule } from './gold-alerts/gold-alerts.module';
 import { QueueModule } from './queue/queue.module';
+import { PushModule } from './push/push.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { QueueModule } from './queue/queue.module';
     FinanceModule,
     GoldModule,
     GoldAlertsModule,
+    PushModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
