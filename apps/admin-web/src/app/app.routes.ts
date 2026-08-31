@@ -4,7 +4,6 @@ import { adminGuard } from './core/auth/admin.guard';
 export const routes: Routes = [
   {
     path: '',
-    canActivate: [adminGuard],
     redirectTo: 'users',
     pathMatch: 'full',
   },
