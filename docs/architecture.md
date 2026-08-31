@@ -113,3 +113,15 @@ attendance, and Gold Alert triggers; it is not a generalized audit log.
 The guarded Angular dashboard loads the summary and trend resources independently. Responsive Liquid Glass cards,
 text-labelled CSS bars, zero/empty states, and panel-level retries keep the page readable without a chart dependency or a
 single all-or-nothing loading state. Existing selected-user management remains separate and unchanged.
+
+## Security hardening and audit logging (Milestone 12)
+
+`AuditModule` owns append-only security events and the guarded `/admin/audit-logs` read model. Audit records retain the
+actor role even if an optional actor relation is later removed, use indexed newest-first access paths, and support only
+bounded allowlisted filters. Account/status mutations write through the same Prisma transaction; provider and queue
+operations record a separate outcome because they cross external system boundaries. The Angular Audit Log route renders
+safe metadata, fixed filters, pagination, and standard loading/empty/error states without mutation controls.
+
+Bootstrap security explicitly combines Helmet, a 100 KB JSON limit, strict DTO whitelisting, endpoint-specific throttles,
+and validated explicit CORS origins. Session validation continues to query the stored session and current account on
+every protected request. No security configuration or audit response includes credential material.

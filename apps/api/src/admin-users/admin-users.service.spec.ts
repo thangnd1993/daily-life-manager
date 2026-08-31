@@ -1,6 +1,7 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { UserRole, UserStatus } from '@prisma/client';
 import { AuthenticatedUser } from '../auth/auth.types';
+import { AuditService } from '../audit/audit.service';
 import { PrismaService } from '../database/prisma.service';
 import { AdminUsersService } from './admin-users.service';
 import {
@@ -46,10 +47,14 @@ describe('AdminUsersService', () => {
     $transaction: jest.fn(),
   };
   let service: AdminUsersService;
+  const audit = { record: jest.fn().mockResolvedValue({}) };
 
   beforeEach(() => {
     jest.clearAllMocks();
-    service = new AdminUsersService(prisma as unknown as PrismaService);
+    service = new AdminUsersService(
+      prisma as unknown as PrismaService,
+      audit as unknown as AuditService,
+    );
   });
 
   it('lists users with pagination, search, filters, and allowlisted sorting', async () => {
@@ -127,6 +132,16 @@ describe('AdminUsersService', () => {
     });
 
     await service.updateStatus(admin, safeUser.id, UserStatus.SUSPENDED);
+    expect(audit.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'ADMIN_USER_STATUS_CHANGED',
+        metadata: {
+          previousStatus: UserStatus.ACTIVE,
+          newStatus: UserStatus.SUSPENDED,
+        },
+      }),
+      transaction,
+    );
     expect(transaction.user.update).toHaveBeenCalledWith({
       where: { id: safeUser.id },
       data: { status: UserStatus.SUSPENDED },

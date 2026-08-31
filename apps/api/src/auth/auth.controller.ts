@@ -5,8 +5,10 @@ import {
   HttpCode,
   HttpStatus,
   Post,
+  Req,
   UseGuards,
 } from '@nestjs/common';
+import { Request } from 'express';
 import {
   ApiBearerAuth,
   ApiOkResponse,
@@ -15,6 +17,7 @@ import {
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
+import { auditContext } from '../audit/audit.types';
 import { AuthenticatedUser, AuthResponse, SafeUser } from './auth.types';
 import { CurrentUser } from './decorators/current-user.decorator';
 import {
@@ -57,8 +60,11 @@ export class AuthController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  logout(@CurrentUser() user: AuthenticatedUser): Promise<void> {
-    return this.auth.logout(user);
+  logout(
+    @CurrentUser() user: AuthenticatedUser,
+    @Req() request: Request,
+  ): Promise<void> {
+    return this.auth.logout(user, auditContext(request));
   }
 
   @Get('me')
@@ -76,8 +82,9 @@ export class AuthController {
   changePassword(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: ChangePasswordDto,
+    @Req() request: Request,
   ): Promise<void> {
-    return this.auth.changePassword(user, dto);
+    return this.auth.changePassword(user, dto, auditContext(request));
   }
 
   @Post('forgot-password')
@@ -90,7 +97,10 @@ export class AuthController {
   @Post('reset-password')
   @HttpCode(HttpStatus.NO_CONTENT)
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
-  resetPassword(@Body() dto: ResetPasswordDto): Promise<void> {
-    return this.auth.resetPassword(dto);
+  resetPassword(
+    @Body() dto: ResetPasswordDto,
+    @Req() request: Request,
+  ): Promise<void> {
+    return this.auth.resetPassword(dto, auditContext(request));
   }
 }

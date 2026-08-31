@@ -5,6 +5,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AdminUsersModule } from './admin-users/admin-users.module';
 import { AdminDashboardModule } from './admin-dashboard/admin-dashboard.module';
 import { AttendanceModule } from './attendance/attendance.module';
+import { AuditModule } from './audit/audit.module';
 import { AuthModule } from './auth/auth.module';
 import { appConfig } from './config/app.config';
 import { environmentSchema } from './config/environment.validation';
@@ -29,6 +30,7 @@ import { PushModule } from './push/push.module';
     QueueModule,
     HealthModule,
     AuthModule,
+    AuditModule,
     AdminDashboardModule,
     AdminUsersModule,
     AttendanceModule,

@@ -1,0 +1,148 @@
+:host {
+  display: block;
+}
+.heading {
+  margin-bottom: 1.5rem;
+}
+h1 {
+  font-size: clamp(2rem, 4vw, 3rem);
+  letter-spacing: -0.04em;
+  margin: 0.25rem 0;
+}
+h2 {
+  font-size: 1rem;
+}
+p {
+  color: var(--muted);
+  margin: 0;
+}
+.eyebrow {
+  color: #52708f;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.filters {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+label {
+  color: var(--muted);
+  display: grid;
+  font-size: 0.72rem;
+  font-weight: 700;
+  gap: 0.35rem;
+}
+select {
+  background: rgba(255, 255, 255, 0.66);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  color: var(--ink);
+  min-height: 42px;
+  padding: 0.55rem 0.8rem;
+}
+.panel {
+  backdrop-filter: blur(22px) saturate(145%);
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 24px;
+  box-shadow: var(--shadow);
+}
+.table-panel {
+  overflow: hidden;
+}
+.table-scroll {
+  overflow-x: auto;
+}
+table {
+  border-collapse: collapse;
+  min-width: 980px;
+  width: 100%;
+}
+th,
+td {
+  border-bottom: 1px solid rgba(97, 112, 132, 0.13);
+  padding: 0.85rem 1rem;
+  text-align: left;
+  vertical-align: top;
+}
+th {
+  color: var(--muted);
+  font-size: 0.68rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+td {
+  font-size: 0.78rem;
+}
+td small {
+  color: var(--muted);
+  display: block;
+  margin-top: 0.2rem;
+}
+code {
+  font-size: 0.7rem;
+}
+.metadata {
+  color: var(--muted);
+  max-width: 300px;
+}
+.outcome {
+  background: #e8f7f0;
+  border-radius: 999px;
+  color: #14724d;
+  font-size: 0.64rem;
+  font-weight: 800;
+  padding: 0.3rem 0.5rem;
+}
+.outcome.failure {
+  background: #fff0ed;
+  color: #a53c22;
+}
+.state {
+  color: var(--muted);
+  padding: 3rem;
+  text-align: center;
+}
+.state button,
+footer button {
+  background: var(--accent);
+  border: 0;
+  border-radius: 10px;
+  color: white;
+  margin-top: 0.75rem;
+  min-height: 38px;
+  padding: 0.5rem 0.8rem;
+}
+footer {
+  align-items: center;
+  color: var(--muted);
+  display: flex;
+  font-size: 0.72rem;
+  justify-content: space-between;
+  padding: 0.8rem 1rem;
+}
+footer div {
+  align-items: center;
+  display: flex;
+  gap: 0.7rem;
+}
+footer button {
+  margin: 0;
+}
+footer button:disabled {
+  opacity: 0.4;
+}
+@media (max-width: 620px) {
+  .filters {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  footer {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+}

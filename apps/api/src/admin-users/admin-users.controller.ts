@@ -5,8 +5,10 @@ import {
   Param,
   Patch,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
+import { Request } from 'express';
 import {
   ApiBearerAuth,
   ApiOkResponse,
@@ -16,6 +18,7 @@ import {
 import { UserRole } from '@prisma/client';
 import { AuthenticatedUser } from '../auth/auth.types';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { auditContext } from '../audit/audit.types';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -52,7 +55,13 @@ export class AdminUsersController {
     @CurrentUser() actor: AuthenticatedUser,
     @Param('id') id: string,
     @Body() dto: UpdateUserStatusDto,
+    @Req() request: Request,
   ): Promise<AdminUserDetail> {
-    return this.users.updateStatus(actor, id, dto.status);
+    return this.users.updateStatus(
+      actor,
+      id,
+      dto.status,
+      auditContext(request),
+    );
   }
 }

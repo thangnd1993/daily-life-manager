@@ -1,0 +1,100 @@
+<section class="heading">
+  <div>
+    <p class="eyebrow">Security operations</p>
+    <h1>Audit log</h1>
+    <p>Append-only records for sensitive account and administrative actions.</p>
+  </div>
+</section>
+
+<section class="filters" aria-label="Audit filters">
+  <label
+    >Action
+    <select [formControl]="action" (change)="resetPage()">
+      <option value="">All actions</option>
+      <option value="ADMIN_USER_STATUS_CHANGED">User status changed</option>
+      <option value="PASSWORD_CHANGED">Password changed</option>
+      <option value="PASSWORD_RESET_COMPLETED">Password reset</option>
+      <option value="SESSION_LOGOUT">Session logout</option>
+      <option value="ADMIN_GOLD_REFRESH">Gold refresh</option>
+      <option value="ADMIN_GOLD_EVALUATION_QUEUED">Gold evaluation queued</option>
+    </select>
+  </label>
+  <label
+    >Target
+    <select [formControl]="targetType" (change)="resetPage()">
+      <option value="">All targets</option>
+      <option value="USER">User</option>
+      <option value="AUTH_SESSION">Session</option>
+      <option value="GOLD_PROVIDER">Gold provider</option>
+      <option value="GOLD_ALERT_JOB">Gold alert job</option>
+    </select>
+  </label>
+</section>
+
+@if (state$ | async; as state) {
+  @if (state.loading) {
+    <section class="panel state" aria-live="polite">Loading audit records…</section>
+  } @else if (state.error) {
+    <section class="panel state error" role="alert">
+      <h2>Audit records could not be loaded</h2>
+      <button type="button" (click)="retry()">Retry</button>
+    </section>
+  } @else {
+    @if (state.data; as pageData) {
+      <section class="panel table-panel">
+        @if (pageData.items.length) {
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>Actor</th>
+                  <th>Action</th>
+                  <th>Target</th>
+                  <th>Outcome</th>
+                  <th>Safe metadata</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of pageData.items; track item.id) {
+                  <tr>
+                    <td>{{ item.createdAt | date: 'medium' }}</td>
+                    <td>
+                      <strong>{{ item.actor?.displayName || 'System' }}</strong
+                      ><small>{{ item.actorRole || 'SYSTEM' }}</small>
+                    </td>
+                    <td>
+                      <code>{{ item.action }}</code>
+                    </td>
+                    <td>
+                      {{ item.targetType }}<small>{{ item.targetId || '—' }}</small>
+                    </td>
+                    <td>
+                      <span class="outcome" [class.failure]="item.outcome === 'FAILURE'">{{ item.outcome }}</span>
+                    </td>
+                    <td class="metadata">{{ metadata(item) }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <footer>
+            <span>{{ pageData.totalItems }} records</span>
+            <div>
+              <button type="button" [disabled]="pageData.page <= 1" (click)="page(pageData.page - 1)">Previous</button>
+              <span>Page {{ pageData.page }} of {{ pageData.totalPages }}</span>
+              <button type="button" [disabled]="pageData.page >= pageData.totalPages" (click)="page(pageData.page + 1)">
+                Next
+              </button>
+            </div>
+          </footer>
+        } @else {
+          <div class="state">
+            <h2>No audit records</h2>
+            <p>Sensitive actions will appear here when they occur.</p>
+          </div>
+        }
+      </section>
+    }
+  }
+}

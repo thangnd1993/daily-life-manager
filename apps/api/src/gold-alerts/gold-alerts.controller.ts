@@ -8,10 +8,15 @@ import {
   Param,
   Patch,
   Post,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { UserRole } from '@prisma/client';
+import { AuditOutcome, UserRole } from '@prisma/client';
+import { Throttle } from '@nestjs/throttler';
+import { Request } from 'express';
+import { AuditService } from '../audit/audit.service';
+import { auditContext } from '../audit/audit.types';
 import { AuthenticatedUser } from '../auth/auth.types';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -87,11 +92,39 @@ export class GoldAlertsController {
 @Roles(UserRole.ADMIN)
 @Controller('admin/gold/alerts')
 export class AdminGoldAlertsController {
-  constructor(private readonly jobs: GoldAlertJobsService) {}
+  constructor(
+    private readonly jobs: GoldAlertJobsService,
+    private readonly audit: AuditService,
+  ) {}
 
   @Post('evaluate')
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @ApiOperation({ summary: 'Queue a global gold price refresh and evaluation' })
-  evaluate() {
-    return this.jobs.enqueueManual();
+  async evaluate(
+    @CurrentUser() user: AuthenticatedUser,
+    @Req() request: Request,
+  ) {
+    try {
+      const result = await this.jobs.enqueueManual();
+      await this.audit.record({
+        actorUserId: user.id,
+        actorRole: user.role,
+        action: 'ADMIN_GOLD_EVALUATION_QUEUED',
+        targetType: 'GOLD_ALERT_JOB',
+        outcome: AuditOutcome.SUCCESS,
+        context: auditContext(request),
+      });
+      return result;
+    } catch (error) {
+      await this.audit.record({
+        actorUserId: user.id,
+        actorRole: user.role,
+        action: 'ADMIN_GOLD_EVALUATION_QUEUED',
+        targetType: 'GOLD_ALERT_JOB',
+        outcome: AuditOutcome.FAILURE,
+        context: auditContext(request),
+      });
+      throw error;
+    }
   }
 }

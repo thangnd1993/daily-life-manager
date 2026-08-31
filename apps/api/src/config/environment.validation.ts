@@ -2,7 +2,30 @@ import Joi from 'joi';
 
 export const environmentSchema = Joi.object({
   API_PREFIX: Joi.string().default('api'),
-  CORS_ORIGINS: Joi.string().default('http://localhost:4200'),
+  CORS_ORIGINS: Joi.string()
+    .custom((value: string, helpers) => {
+      const origins = value.split(',').map((origin) => origin.trim());
+      if (
+        !origins.length ||
+        origins.some((origin) => !origin || origin === '*')
+      ) {
+        return helpers.error('any.invalid');
+      }
+      try {
+        origins.forEach((origin) => {
+          const url = new URL(origin);
+          if (
+            !['http:', 'https:'].includes(url.protocol) ||
+            url.origin !== origin
+          )
+            throw new Error();
+        });
+      } catch {
+        return helpers.error('any.invalid');
+      }
+      return value;
+    })
+    .default('http://localhost:4200'),
   DATABASE_URL: Joi.string()
     .uri({ scheme: ['postgresql', 'postgres'] })
     .required(),

@@ -22,6 +22,12 @@ export const routes: Routes = [
     title: 'Users · Daily Life Manager',
   },
   {
+    path: 'audit',
+    canActivate: [adminGuard],
+    loadComponent: () => import('./features/audit/audit.component').then((component) => component.AuditComponent),
+    title: 'Audit log · Daily Life Manager',
+  },
+  {
     path: 'users/:id',
     canActivate: [adminGuard],
     loadComponent: () =>

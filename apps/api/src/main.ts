@@ -2,6 +2,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { json } from 'express';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 
@@ -10,6 +11,7 @@ async function bootstrap() {
   const config = app.get(ConfigService);
   const prefix = config.get<string>('app.apiPrefix', 'api');
   app.use(helmet());
+  app.use(json({ limit: '100kb' }));
   app.enableCors({
     origin: config.get<string[]>('app.corsOrigins', ['http://localhost:4200']),
   });

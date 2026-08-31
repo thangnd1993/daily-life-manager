@@ -2,6 +2,7 @@ import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Prisma, User, UserRole, UserStatus } from '@prisma/client';
+import { AuditService } from '../audit/audit.service';
 import { PrismaService } from '../database/prisma.service';
 import { AuthService } from './auth.service';
 import { AuthenticatedUser } from './auth.types';
@@ -205,10 +206,12 @@ describe('AuthService', () => {
   let database: FakeDatabase;
   let delivery: CaptureResetDelivery;
   let service: AuthService;
+  let audit: { record: jest.Mock };
 
   beforeEach(() => {
     database = new FakeDatabase();
     delivery = new CaptureResetDelivery();
+    audit = { record: jest.fn().mockResolvedValue({}) };
     const config = new ConfigService({
       JWT_ACCESS_SECRET: 'test-secret-with-at-least-thirty-two-characters',
       JWT_ACCESS_TTL: '15m',
@@ -220,6 +223,7 @@ describe('AuthService', () => {
       new JwtService(),
       config,
       delivery,
+      audit as unknown as AuditService,
     );
   });
 
@@ -312,6 +316,13 @@ describe('AuthService', () => {
       currentPassword: strongPassword,
       newPassword: nextPassword,
     });
+    expect(audit.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'PASSWORD_CHANGED',
+        targetId: current.id,
+      }),
+      database,
+    );
     await expect(
       service.login({ email: registered.user.email, password: strongPassword }),
     ).rejects.toThrow('Invalid email or password');
@@ -332,6 +343,13 @@ describe('AuthService', () => {
     await service.forgotPassword({ email: registered.user.email });
     const token = delivery.messages[0].token;
     await service.resetPassword({ token, newPassword: nextPassword });
+    expect(audit.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'PASSWORD_RESET_COMPLETED',
+        targetId: registered.user.id,
+      }),
+      database,
+    );
     await expect(
       service.resetPassword({ token, newPassword: strongPassword }),
     ).rejects.toThrow('Invalid or expired reset token');

@@ -1,6 +1,20 @@
-import { Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { UserRole } from '@prisma/client';
+import { AuditOutcome, UserRole } from '@prisma/client';
+import { Throttle } from '@nestjs/throttler';
+import { Request } from 'express';
+import { AuditService } from '../audit/audit.service';
+import { auditContext } from '../audit/audit.types';
+import { AuthenticatedUser } from '../auth/auth.types';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -40,13 +54,42 @@ export class GoldController {
 @Roles(UserRole.ADMIN)
 @Controller('admin/gold')
 export class AdminGoldController {
-  constructor(private readonly gold: GoldService) {}
+  constructor(
+    private readonly gold: GoldService,
+    private readonly audit: AuditService,
+  ) {}
 
   @Post('refresh')
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @ApiOperation({
     summary: 'Fetch, validate, and persist the latest provider prices',
   })
-  refresh() {
-    return this.gold.refresh();
+  async refresh(
+    @CurrentUser() user: AuthenticatedUser,
+    @Req() request: Request,
+  ) {
+    try {
+      const result = await this.gold.refresh();
+      await this.audit.record({
+        actorUserId: user.id,
+        actorRole: user.role,
+        action: 'ADMIN_GOLD_REFRESH',
+        targetType: 'GOLD_PROVIDER',
+        outcome: AuditOutcome.SUCCESS,
+        metadata: { snapshotCount: result.length },
+        context: auditContext(request),
+      });
+      return result;
+    } catch (error) {
+      await this.audit.record({
+        actorUserId: user.id,
+        actorRole: user.role,
+        action: 'ADMIN_GOLD_REFRESH',
+        targetType: 'GOLD_PROVIDER',
+        outcome: AuditOutcome.FAILURE,
+        context: auditContext(request),
+      });
+      throw error;
+    }
   }
 }

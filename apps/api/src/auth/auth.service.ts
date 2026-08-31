@@ -9,6 +9,8 @@ import { Prisma, User, UserStatus } from '@prisma/client';
 import * as argon2 from 'argon2';
 import { createHash, randomBytes } from 'node:crypto';
 import { PrismaService } from '../database/prisma.service';
+import { AuditService } from '../audit/audit.service';
+import { AuditContext } from '../audit/audit.types';
 import {
   AccessTokenPayload,
   AuthenticatedUser,
@@ -34,6 +36,7 @@ export class AuthService {
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
     private readonly resetDelivery: PasswordResetDeliveryService,
+    private readonly audit: AuditService,
   ) {}
 
   async register(dto: RegisterDto): Promise<AuthResponse> {
@@ -111,10 +114,23 @@ export class AuthService {
     };
   }
 
-  async logout(user: AuthenticatedUser): Promise<void> {
-    await this.prisma.authSession.updateMany({
-      where: { id: user.sessionId, userId: user.id, revokedAt: null },
-      data: { revokedAt: new Date() },
+  async logout(user: AuthenticatedUser, context?: AuditContext): Promise<void> {
+    await this.prisma.$transaction(async (transaction) => {
+      await transaction.authSession.updateMany({
+        where: { id: user.sessionId, userId: user.id, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
+      await this.audit.record(
+        {
+          actorUserId: user.id,
+          actorRole: user.role,
+          action: 'SESSION_LOGOUT',
+          targetType: 'AUTH_SESSION',
+          targetId: user.sessionId,
+          context,
+        },
+        transaction,
+      );
     });
   }
 
@@ -128,6 +144,7 @@ export class AuthService {
   async changePassword(
     user: AuthenticatedUser,
     dto: ChangePasswordDto,
+    context?: AuditContext,
   ): Promise<void> {
     const account = await this.prisma.user.findUniqueOrThrow({
       where: { id: user.id },
@@ -136,20 +153,31 @@ export class AuthService {
       throw new UnauthorizedException('Current password is incorrect');
     }
     const passwordHash = await this.hashPassword(dto.newPassword);
-    await this.prisma.$transaction([
-      this.prisma.user.update({
+    await this.prisma.$transaction(async (transaction) => {
+      await transaction.user.update({
         where: { id: user.id },
         data: { passwordHash },
-      }),
-      this.prisma.authSession.updateMany({
+      });
+      await transaction.authSession.updateMany({
         where: {
           userId: user.id,
           id: { not: user.sessionId },
           revokedAt: null,
         },
         data: { revokedAt: new Date() },
-      }),
-    ]);
+      });
+      await this.audit.record(
+        {
+          actorUserId: user.id,
+          actorRole: user.role,
+          action: 'PASSWORD_CHANGED',
+          targetType: 'USER',
+          targetId: user.id,
+          context,
+        },
+        transaction,
+      );
+    });
   }
 
   async forgotPassword(dto: ForgotPasswordDto): Promise<void> {
@@ -174,7 +202,10 @@ export class AuthService {
     });
   }
 
-  async resetPassword(dto: ResetPasswordDto): Promise<void> {
+  async resetPassword(
+    dto: ResetPasswordDto,
+    context?: AuditContext,
+  ): Promise<void> {
     const reset = await this.prisma.passwordResetToken.findUnique({
       where: { tokenHash: this.digestToken(dto.token) },
       include: { user: true },
@@ -203,6 +234,17 @@ export class AuthService {
         where: { userId: reset.userId, revokedAt: null },
         data: { revokedAt: new Date() },
       });
+      await this.audit.record(
+        {
+          actorUserId: reset.userId,
+          actorRole: reset.user.role,
+          action: 'PASSWORD_RESET_COMPLETED',
+          targetType: 'USER',
+          targetId: reset.userId,
+          context,
+        },
+        transaction,
+      );
     });
   }
 

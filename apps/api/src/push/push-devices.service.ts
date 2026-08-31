@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { RegisterPushDeviceDto } from './dto/push-device.dto';
 import { PrismaService } from '../database/prisma.service';
 
@@ -7,11 +11,16 @@ export class PushDevicesService {
   constructor(private readonly prisma: PrismaService) {}
 
   async register(userId: string, dto: RegisterPushDeviceDto) {
+    const existing = await this.prisma.pushDevice.findUnique({
+      where: { pushToken: dto.pushToken },
+    });
+    if (existing && existing.userId !== userId) {
+      throw new ConflictException('Push device is already registered');
+    }
     const device = await this.prisma.pushDevice.upsert({
       where: { pushToken: dto.pushToken },
       create: { userId, platform: dto.platform, pushToken: dto.pushToken },
       update: {
-        userId,
         platform: dto.platform,
         isActive: true,
         lastSeenAt: new Date(),

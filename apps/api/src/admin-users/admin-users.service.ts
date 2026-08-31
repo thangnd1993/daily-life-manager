@@ -5,6 +5,8 @@ import {
 } from '@nestjs/common';
 import { Prisma, UserRole, UserStatus } from '@prisma/client';
 import { AuthenticatedUser } from '../auth/auth.types';
+import { AuditService } from '../audit/audit.service';
+import { AuditContext } from '../audit/audit.types';
 import { PrismaService } from '../database/prisma.service';
 import { ListUsersQueryDto } from './dto/admin-users.dto';
 import { AdminUserDetail, PaginatedUsers } from './admin-users.types';
@@ -23,7 +25,10 @@ const safeUserSelect = {
 
 @Injectable()
 export class AdminUsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly audit: AuditService,
+  ) {}
 
   async list(query: ListUsersQueryDto): Promise<PaginatedUsers> {
     const where: Prisma.UserWhereInput = {
@@ -90,6 +95,7 @@ export class AdminUsersService {
     actor: AuthenticatedUser,
     id: string,
     status: UserStatus,
+    context?: AuditContext,
   ): Promise<AdminUserDetail> {
     if (actor.id === id && status !== UserStatus.ACTIVE) {
       throw new BadRequestException(
@@ -120,6 +126,18 @@ export class AdminUsersService {
             data: { revokedAt: new Date() },
           });
         }
+        await this.audit.record(
+          {
+            actorUserId: actor.id,
+            actorRole: actor.role,
+            action: 'ADMIN_USER_STATUS_CHANGED',
+            targetType: 'USER',
+            targetId: id,
+            metadata: { previousStatus: target.status, newStatus: status },
+            context,
+          },
+          transaction,
+        );
       },
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
     );
