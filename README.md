@@ -69,10 +69,15 @@ read-only; status changes are guarded and disabling an account revokes its sessi
 
 ## Quality commands
 
-- API: `npm run format`, `npm run lint`, `npm test`, `npm run build`, `npm run prisma:generate`
+- API: `npm run format`, `npm run lint`, `npm test`, `npm run test:cov:ci`, `npm run build`, `npm run prisma:generate`
 - Admin: `npm run format`, `npm run lint`, `npm run test:ci`, `npm run build`
 - Mobile: `dart format .`, `flutter analyze`, `flutter test`
 - Entire Node foundation: root `npm run lint`, `npm test`, `npm run build`
+
+The API integration suite uses a migrated PostgreSQL database and disables BullMQ workers with `NODE_ENV=test`. Always
+point `DATABASE_URL` at a disposable test-only database before running `npm run test:e2e -- --runInBand`; the suite
+deletes its own test records between journeys. GitHub Actions provides an ephemeral database, runs migrations, and then
+runs both API unit and e2e suites. External Gold and Firebase calls remain mocked or disabled.
 
 ## Status
 

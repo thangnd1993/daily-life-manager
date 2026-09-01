@@ -105,6 +105,17 @@ describe('UserDetailComponent', () => {
     expect(fixture.componentInstance.feedback).toContain('updated');
   });
 
+  it('keeps the selected status visible when a status mutation fails', () => {
+    users.updateStatus.mockReturnValue(throwError(() => new Error('failed')));
+    const fixture = TestBed.createComponent(UserDetailComponent);
+    fixture.detectChanges();
+    fixture.componentInstance.requestStatus('SUSPENDED');
+    fixture.componentInstance.confirmStatus(detail);
+    expect(fixture.componentInstance.saving).toBe(false);
+    expect(fixture.componentInstance.pendingStatus).toBe('SUSPENDED');
+    expect(fixture.componentInstance.feedback).toContain('could not be updated');
+  });
+
   it('renders detail loading errors', () => {
     users.detail.mockReturnValue(throwError(() => new Error('failed')));
     const fixture = TestBed.createComponent(UserDetailComponent);

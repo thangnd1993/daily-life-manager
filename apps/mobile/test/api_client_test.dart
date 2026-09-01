@@ -47,6 +47,26 @@ void main() {
     expect(profileCalls, 2);
   });
 
+  test('clears persisted credentials when refresh is rejected', () async {
+    final store = MemoryStore()
+      ..tokens = const AuthTokens(
+        accessToken: 'expired',
+        refreshToken: 'revoked-refresh',
+      );
+    final api = ApiClient(
+      tokenStore: store,
+      client: MockClient((request) async {
+        if (request.url.path.endsWith('/auth/refresh')) {
+          return http.Response('', 401);
+        }
+        return http.Response('', 401);
+      }),
+    );
+    await api.restoreTokens();
+    await expectLater(api.me(), throwsA(isA<ApiException>()));
+    expect(store.tokens, isNull);
+  });
+
   test('loads today, checks in, and loads monthly attendance', () async {
     final requests = <http.Request>[];
     final api = ApiClient(

@@ -48,8 +48,11 @@ jobs:
       - run: npm run format:check
       - run: npm run lint
       - run: npm test -- --runInBand
-      - run: npm run build
       - run: npm run prisma:deploy
+      - run: npm run test:e2e -- --runInBand
+        env:
+          NODE_ENV: test
+      - run: npm run build
       - name: Verify API, PostgreSQL, and Redis connectivity
         run: |
           npm run start:prod > /tmp/daily-life-manager-api.log 2>&1 &

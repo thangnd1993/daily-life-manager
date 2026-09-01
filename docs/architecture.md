@@ -125,3 +125,12 @@ safe metadata, fixed filters, pagination, and standard loading/empty/error state
 Bootstrap security explicitly combines Helmet, a 100 KB JSON limit, strict DTO whitelisting, endpoint-specific throttles,
 and validated explicit CORS origins. Session validation continues to query the stored session and current account on
 every protected request. No security configuration or audit response includes credential material.
+
+## Automated testing architecture (Milestone 13)
+
+Fast unit suites remain the primary feedback loop for domain calculations, authorization metadata, provider adapters,
+queue delivery, and client state. A database-backed NestJS e2e suite complements them with coherent HTTP journeys across
+authentication, session rotation, audit, admin status enforcement, attendance, finance/budgets, and Gold Alert to
+Notification persistence. It uses `NODE_ENV=test` to suppress BullMQ workers and always targets a disposable migrated
+database that is cleaned between cases. CI runs the e2e suite in its existing ephemeral PostgreSQL job; no live Gold or
+Firebase service is contacted.
