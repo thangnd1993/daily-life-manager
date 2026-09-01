@@ -93,6 +93,25 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     return '${date.day.toString().padLeft(2, '0')} ${months[date.month - 1]}';
   }
 
+  String _historyDate(dynamic value) {
+    final parsed = DateTime.tryParse(value?.toString() ?? '');
+    return parsed == null
+        ? 'Recent check-in'
+        : '${_shortDate(parsed)} ${parsed.year}';
+  }
+
+  String _friendlySource(Map<String, dynamic> record) {
+    final source = record['source']?.toString().toLowerCase();
+    final sourceLabel = source == null || source.isEmpty
+        ? 'Mobile'
+        : '${source[0].toUpperCase()}${source.substring(1)}';
+    final checkedAt =
+        DateTime.tryParse(record['checkedInAt']?.toString() ?? '')?.toLocal();
+    return checkedAt == null
+        ? sourceLabel
+        : '${TimeOfDay.fromDateTime(checkedAt).format(context)} · $sourceLabel';
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -207,9 +226,8 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                 leading: const Icon(
                                     Icons.check_circle_outline_rounded,
                                     color: AppColors.accent),
-                                title: record['attendanceDate'] as String,
-                                subtitle:
-                                    '${record['timezone']} · ${record['source']}',
+                                title: _historyDate(record['attendanceDate']),
+                                subtitle: _friendlySource(record),
                               ))
                           .toList()),
               ])),

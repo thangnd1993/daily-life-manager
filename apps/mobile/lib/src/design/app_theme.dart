@@ -15,8 +15,9 @@ abstract final class AppColors {
   static const tertiary = Color(0xff8a9490);
   static const line = Color(0xffd7dfdc);
   static const highlight = Color(0xe6ffffff);
-  static const accent = Color(0xff147259);
-  static const accentSoft = Color(0xffd7ebe3);
+  static const accent = Color(0xff246bfd);
+  static const accentSoft = Color(0xffdce8ff);
+  static const success = Color(0xff079455);
   static const danger = Color(0xffa63d40);
   static const warning = Color(0xff8b6419);
 }

@@ -73,7 +73,7 @@ void main() {
     expect(find.text('Checked in today'), findsOneWidget);
     expect(find.text('Complete'), findsOneWidget);
     expect(find.text('This month'), findsOneWidget);
-    expect(find.text('2026-08-29'), findsOneWidget);
+    expect(find.text('29 Aug 2026'), findsOneWidget);
   });
 
   testWidgets('opens finance overview with string VND totals and transactions',

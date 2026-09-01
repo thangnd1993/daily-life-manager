@@ -14,15 +14,16 @@ class AppShell extends StatelessWidget {
       initialLocation: index == navigationShell.currentIndex);
 
   static const _items = [
-    (Icons.home_outlined, Icons.home_rounded, 'Home'),
-    (Icons.how_to_reg_outlined, Icons.how_to_reg_rounded, 'Attendance'),
+    (0, Icons.home_outlined, Icons.home_rounded, 'Home'),
+    (1, Icons.how_to_reg_outlined, Icons.how_to_reg_rounded, 'Attendance'),
+    (3, Icons.auto_awesome_outlined, Icons.auto_awesome_rounded, 'Gold'),
     (
+      2,
       Icons.account_balance_wallet_outlined,
       Icons.account_balance_wallet_rounded,
       'Finance'
     ),
-    (Icons.auto_awesome_outlined, Icons.auto_awesome_rounded, 'Gold'),
-    (Icons.person_outline_rounded, Icons.person_rounded, 'Account'),
+    (4, Icons.person_outline_rounded, Icons.person_rounded, 'Account'),
   ];
 
   @override
@@ -51,15 +52,15 @@ class AppShell extends StatelessWidget {
                 ),
                 child: Row(
                     children: List.generate(_items.length, (index) {
-                  final selected = index == navigationShell.currentIndex;
                   final item = _items[index];
+                  final selected = item.$1 == navigationShell.currentIndex;
                   return Expanded(
                       child: Semantics(
                     selected: selected,
                     button: true,
-                    label: item.$3,
+                    label: item.$4,
                     child: InkWell(
-                      onTap: () => _select(index),
+                      onTap: () => _select(item.$1),
                       child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -67,19 +68,36 @@ class AppShell extends StatelessWidget {
                               duration: const Duration(milliseconds: 180),
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 14, vertical: 5),
-                              decoration: BoxDecoration(
-                                  color: selected
-                                      ? AppColors.accentSoft
-                                      : Colors.transparent,
-                                  borderRadius: BorderRadius.circular(12)),
-                              child: Icon(selected ? item.$2 : item.$1,
-                                  size: 21,
-                                  color: selected
-                                      ? AppColors.accent
-                                      : AppColors.secondary),
+                              decoration: index == 2
+                                  ? const BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      gradient: SweepGradient(colors: [
+                                        Color(0xffffbd2e),
+                                        Color(0xffff3b57),
+                                        Color(0xffac48ff),
+                                        Color(0xff24b7ff),
+                                        Color(0xffffbd2e)
+                                      ]),
+                                      boxShadow: [
+                                          BoxShadow(
+                                              color: Color(0x44246bfd),
+                                              blurRadius: 12)
+                                        ])
+                                  : BoxDecoration(
+                                      color: selected
+                                          ? AppColors.accentSoft
+                                          : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(12)),
+                              child: Icon(selected ? item.$3 : item.$2,
+                                  size: index == 2 ? 23 : 21,
+                                  color: index == 2
+                                      ? Colors.white
+                                      : selected
+                                          ? AppColors.accent
+                                          : AppColors.secondary),
                             ),
                             const SizedBox(height: 1),
-                            Text(item.$3,
+                            Text(item.$4,
                                 maxLines: 1,
                                 style: TextStyle(
                                     fontSize: 9,

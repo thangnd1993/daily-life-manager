@@ -85,6 +85,66 @@ class GlassSurface extends StatelessWidget {
       );
 }
 
+class TrendLine extends StatelessWidget {
+  const TrendLine(
+      {required this.values,
+      this.height = 64,
+      this.color = AppColors.accent,
+      super.key});
+  final List<double> values;
+  final double height;
+  final Color color;
+  @override
+  Widget build(BuildContext context) => SizedBox(
+      height: height,
+      width: double.infinity,
+      child: CustomPaint(painter: _TrendPainter(values, color)));
+}
+
+class _TrendPainter extends CustomPainter {
+  const _TrendPainter(this.values, this.color);
+  final List<double> values;
+  final Color color;
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (values.length < 2) return;
+    final minValue = values.reduce((a, b) => a < b ? a : b);
+    final maxValue = values.reduce((a, b) => a > b ? a : b);
+    final range = maxValue == minValue ? 1 : maxValue - minValue;
+    final path = Path();
+    for (var i = 0; i < values.length; i++) {
+      final x = size.width * i / (values.length - 1);
+      final y = size.height -
+          8 -
+          ((values[i] - minValue) / range) * (size.height - 16);
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+    final glow = Paint()
+      ..color = color.withValues(alpha: .16)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 8
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
+    final stroke = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    canvas.drawPath(path, glow);
+    canvas.drawPath(path, stroke);
+  }
+
+  @override
+  bool shouldRepaint(covariant _TrendPainter oldDelegate) =>
+      oldDelegate.values != values || oldDelegate.color != color;
+}
+
 class PageHeader extends StatelessWidget {
   const PageHeader(
       {required this.title,
@@ -207,7 +267,7 @@ class StatusMark extends StatelessWidget {
               height: 8,
               decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: positive ? AppColors.accent : AppColors.warning)),
+                  color: positive ? AppColors.success : AppColors.warning)),
           const SizedBox(width: AppSpace.xs),
           Flexible(
               child: Text(label,

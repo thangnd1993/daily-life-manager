@@ -74,6 +74,24 @@ class _FinanceScreenState extends State<FinanceScreen> {
     await _load();
   }
 
+  String get _monthLabel {
+    const names = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December'
+    ];
+    return '${names[month.month - 1]} ${month.year}';
+  }
+
   Future<void> _editTransaction([Map<String, dynamic>? transaction]) async {
     final type =
         ValueNotifier<String>(transaction?['type'] as String? ?? 'EXPENSE');
@@ -333,7 +351,7 @@ class _FinanceScreenState extends State<FinanceScreen> {
                         IconButton(
                             onPressed: () => _changeMonth(-1),
                             icon: const Icon(Icons.chevron_left)),
-                        Text('${month.month}/${month.year}',
+                        Text(_monthLabel,
                             style: Theme.of(context).textTheme.titleLarge),
                         IconButton(
                             onPressed: () => _changeMonth(1),
@@ -359,6 +377,16 @@ class _FinanceScreenState extends State<FinanceScreen> {
                           const SizedBox(height: 6),
                           Text(_money(summary['netBalance']),
                               style: Theme.of(context).textTheme.displaySmall),
+                          const SizedBox(height: AppSpace.sm),
+                          TrendLine(
+                              values: _trend
+                                  .map((item) =>
+                                      double.tryParse(
+                                          item['netBalance']?.toString() ??
+                                              '') ??
+                                      0)
+                                  .toList(),
+                              height: 54),
                           const SizedBox(height: AppSpace.lg),
                           Row(children: [
                             Expanded(

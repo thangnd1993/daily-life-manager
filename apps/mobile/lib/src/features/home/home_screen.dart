@@ -182,31 +182,60 @@ class _HomeScreenState extends State<HomeScreen>
                               minHeight: 6,
                               backgroundColor: AppColors.line)),
                     ])),
+                const SizedBox(height: AppSpace.md),
+                Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Expanded(
+                      child: GlassSurface(
+                          padding: const EdgeInsets.all(16),
+                          onTap: () => context.go('/finance'),
+                          child: _BudgetSnapshot(
+                              budget: budgets.isEmpty ? null : budgets.first))),
+                  const SizedBox(width: AppSpace.sm),
+                  Expanded(
+                      child: GlassSurface(
+                          padding: const EdgeInsets.all(16),
+                          onTap: () => context.go('/gold'),
+                          child:
+                              _GoldSnapshot(price: firstPrice, money: _money))),
+                ]),
                 const SizedBox(height: AppSpace.lg),
-                GroupedSurface(children: [
-                  AppRow(
-                      title: 'Budgets',
-                      subtitle: budgets.isEmpty
-                          ? 'No budget set'
-                          : '${budgets.length} active',
-                      trailing: const Icon(Icons.chevron_right_rounded),
-                      onTap: () => context.go('/finance')),
-                  AppRow(
-                      title: firstPrice?['productName'] as String? ??
-                          'Gold prices',
-                      subtitle: firstPrice == null
-                          ? 'No stored price'
-                          : '${_money(firstPrice['buyPrice'])} buy · ${_money(firstPrice['sellPrice'])} sell',
-                      trailing: const Icon(Icons.chevron_right_rounded),
-                      onTap: () => context.go('/gold')),
-                  if (activeAlerts > 0)
+                const SectionHeader(title: 'Quick actions'),
+                const SizedBox(height: AppSpace.sm),
+                Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _QuickAction(
+                          label: 'Add expense',
+                          icon: Icons.remove_rounded,
+                          color: AppColors.danger,
+                          onTap: () => context.go('/finance')),
+                      _QuickAction(
+                          label: 'Add income',
+                          icon: Icons.add_rounded,
+                          color: AppColors.success,
+                          onTap: () => context.go('/finance')),
+                      _QuickAction(
+                          label: 'Gold alerts',
+                          icon: Icons.notifications_rounded,
+                          color: AppColors.warning,
+                          onTap: () => context.go('/gold')),
+                      _QuickAction(
+                          label: checkedIn ? 'Attendance' : 'Check in',
+                          icon: Icons.how_to_reg_rounded,
+                          color: AppColors.accent,
+                          onTap: () => context.go('/attendance')),
+                    ]),
+                if (activeAlerts > 0) ...[
+                  const SizedBox(height: AppSpace.lg),
+                  GroupedSurface(children: [
                     AppRow(
                         title: 'Gold alerts',
                         subtitle:
                             '$activeAlerts enabled alert${activeAlerts == 1 ? '' : 's'}',
                         trailing: const Icon(Icons.chevron_right_rounded),
-                        onTap: () => context.go('/gold')),
-                ]),
+                        onTap: () => context.go('/gold'))
+                  ]),
+                ],
               ],
             ]),
       ),
@@ -225,4 +254,104 @@ class _Metric extends StatelessWidget {
         const SizedBox(height: 4),
         Text(value, style: Theme.of(context).textTheme.titleLarge),
       ]);
+}
+
+class _BudgetSnapshot extends StatelessWidget {
+  const _BudgetSnapshot({required this.budget});
+  final Map<String, dynamic>? budget;
+  @override
+  Widget build(BuildContext context) {
+    final percent = (budget?['percentageUsed'] as num?)?.toDouble() ?? 0;
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text('Budget', style: Theme.of(context).textTheme.titleMedium),
+      const SizedBox(height: AppSpace.sm),
+      Text('${percent.round()}%',
+          style: Theme.of(context).textTheme.headlineMedium),
+      const SizedBox(height: AppSpace.sm),
+      ClipRRect(
+          borderRadius: BorderRadius.circular(5),
+          child: LinearProgressIndicator(
+              value: (percent / 100).clamp(0, 1),
+              minHeight: 7,
+              backgroundColor: AppColors.line)),
+      const SizedBox(height: AppSpace.sm),
+      Text(budget == null ? 'No budget set' : '1 active',
+          style: Theme.of(context)
+              .textTheme
+              .bodySmall
+              ?.copyWith(color: AppColors.secondary)),
+    ]);
+  }
+}
+
+class _GoldSnapshot extends StatelessWidget {
+  const _GoldSnapshot({required this.price, required this.money});
+  final Map<String, dynamic>? price;
+  final String Function(dynamic) money;
+  @override
+  Widget build(BuildContext context) =>
+      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(price?['productName'] as String? ?? 'Gold',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: AppSpace.sm),
+        Text('Buy',
+            style: Theme.of(context)
+                .textTheme
+                .bodySmall
+                ?.copyWith(color: AppColors.secondary)),
+        Text(price == null ? '—' : money(price!['buyPrice']),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+                color: AppColors.success, fontWeight: FontWeight.w700)),
+        const SizedBox(height: AppSpace.xs),
+        Text('Sell',
+            style: Theme.of(context)
+                .textTheme
+                .bodySmall
+                ?.copyWith(color: AppColors.secondary)),
+        Text(price == null ? '—' : money(price!['sellPrice']),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+                color: AppColors.danger, fontWeight: FontWeight.w700)),
+      ]);
+}
+
+class _QuickAction extends StatelessWidget {
+  const _QuickAction(
+      {required this.label,
+      required this.icon,
+      required this.color,
+      required this.onTap});
+  final String label;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+  @override
+  Widget build(BuildContext context) => SizedBox(
+      width: 74,
+      child: InkWell(
+          borderRadius: BorderRadius.circular(18),
+          onTap: onTap,
+          child: Column(children: [
+            Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: .7),
+                    borderRadius: BorderRadius.circular(17),
+                    boxShadow: const [
+                      BoxShadow(color: Color(0x12000000), blurRadius: 14)
+                    ]),
+                child: Icon(icon, color: color)),
+            const SizedBox(height: 7),
+            Text(label,
+                maxLines: 2,
+                textAlign: TextAlign.center,
+                style:
+                    const TextStyle(fontSize: 11, color: AppColors.secondary)),
+          ])));
 }

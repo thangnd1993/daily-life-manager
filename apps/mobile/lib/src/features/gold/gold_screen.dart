@@ -331,6 +331,15 @@ class _GoldScreenState extends State<GoldScreen> {
                         selected: days,
                         onSelected: _range),
                     const SizedBox(height: 12),
+                    TrendLine(
+                        values: history.reversed
+                            .map((item) =>
+                                double.tryParse(
+                                    item['sellPrice']?.toString() ?? '') ??
+                                0)
+                            .toList(),
+                        height: 88),
+                    const SizedBox(height: AppSpace.sm),
                     Text('Recent history',
                         style: Theme.of(context).textTheme.titleLarge),
                     if (history.isEmpty)
