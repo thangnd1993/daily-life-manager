@@ -407,19 +407,22 @@ class AuthLayout extends StatelessWidget {
           child:
               Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             Align(
-                alignment: Alignment.centerLeft,
+                alignment: Alignment.center,
                 child: Container(
                     width: 46,
                     height: 46,
                     decoration: BoxDecoration(
-                        color: AppColors.ink,
+                        color: Colors.white.withValues(alpha: .78),
                         borderRadius: BorderRadius.circular(15)),
-                    child: const Icon(Icons.blur_on_rounded,
-                        color: Colors.white))),
+                    child: const Icon(Icons.auto_awesome_rounded,
+                        color: AppColors.accent))),
             const SizedBox(height: AppSpace.xl),
-            Text(title, style: Theme.of(context).textTheme.headlineLarge),
+            Text(title,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.headlineLarge),
             const SizedBox(height: AppSpace.sm),
             Text(subtitle,
+                textAlign: TextAlign.center,
                 style: Theme.of(context)
                     .textTheme
                     .bodyLarge

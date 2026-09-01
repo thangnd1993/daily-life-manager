@@ -85,10 +85,15 @@ class AccountScreen extends StatelessWidget {
                       'Available when device support and permission are enabled.')
             ]),
             const SizedBox(height: AppSpace.xl),
-            TextButton.icon(
-                onPressed: () => _logout(context),
-                icon: const Icon(Icons.logout),
-                label: const Text('Sign out')),
+            GroupedSurface(children: [
+              AppRow(
+                  leading:
+                      const Icon(Icons.logout_rounded, color: AppColors.danger),
+                  title: 'Sign out',
+                  trailing: const Icon(Icons.chevron_right_rounded,
+                      color: AppColors.tertiary),
+                  onTap: () => _logout(context))
+            ]),
           ]),
     );
   }

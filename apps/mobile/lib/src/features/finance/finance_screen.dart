@@ -127,55 +127,120 @@ class _FinanceScreenState extends State<FinanceScreen> {
             TextField(
                 controller: amount,
                 keyboardType: TextInputType.number,
-                style: Theme.of(context).textTheme.headlineMedium,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.displaySmall,
                 decoration: const InputDecoration(
-                    labelText: 'Amount', suffixText: '₫')),
+                    hintText: '0 ₫',
+                    filled: false,
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none)),
+            const SizedBox(height: AppSpace.lg),
+            SizedBox(
+                height: 78,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: usable.length,
+                  separatorBuilder: (_, __) =>
+                      const SizedBox(width: AppSpace.xs),
+                  itemBuilder: (context, index) {
+                    final category = usable[index];
+                    final selected = category['id'] == categoryId;
+                    return Semantics(
+                        selected: selected,
+                        button: true,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(16),
+                          onTap: () => setDialogState(
+                              () => categoryId = category['id'] as String),
+                          child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 160),
+                              width: 66,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 6, vertical: 9),
+                              decoration: BoxDecoration(
+                                  color: selected
+                                      ? AppColors.accentSoft
+                                      : Colors.white.withValues(alpha: .5),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                      color: selected
+                                          ? AppColors.accent
+                                              .withValues(alpha: .25)
+                                          : AppColors.line)),
+                              child: Column(children: [
+                                Icon(_categoryIcon(category['name'] as String),
+                                    size: 22,
+                                    color: selected
+                                        ? AppColors.accent
+                                        : AppColors.secondary),
+                                const SizedBox(height: 5),
+                                Text(category['name'] as String,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                        fontSize: 10,
+                                        color: selected
+                                            ? AppColors.accent
+                                            : AppColors.secondary))
+                              ])),
+                        ));
+                  },
+                )),
             const SizedBox(height: AppSpace.md),
-            DropdownButtonFormField<String>(
-              key: ValueKey(type.value),
-              initialValue: categoryId,
-              decoration: const InputDecoration(labelText: 'Category'),
-              items: usable
-                  .map((category) => DropdownMenuItem(
-                      value: category['id'] as String,
-                      child: Text(category['name'] as String)))
-                  .toList(),
-              onChanged: (value) => categoryId = value,
-            ),
+            GroupedSurface(children: [
+              AppRow(
+                  leading: const Icon(Icons.calendar_today_outlined),
+                  title: 'Date',
+                  subtitle: _formatDate(occurredAt),
+                  onTap: () async {
+                    final date = await showDatePicker(
+                        context: context,
+                        firstDate: DateTime(2000),
+                        lastDate: DateTime(2100),
+                        initialDate: occurredAt);
+                    if (date != null) {
+                      setDialogState(() => occurredAt = DateTime(
+                          date.year,
+                          date.month,
+                          date.day,
+                          occurredAt.hour,
+                          occurredAt.minute));
+                    }
+                  }),
+              AppRow(
+                  leading: const Icon(Icons.schedule_outlined),
+                  title: 'Time',
+                  subtitle: TimeOfDay.fromDateTime(occurredAt).format(context),
+                  onTap: () async {
+                    final time = await showTimePicker(
+                        context: context,
+                        initialTime: TimeOfDay.fromDateTime(occurredAt));
+                    if (time != null) {
+                      setDialogState(() => occurredAt = DateTime(
+                          occurredAt.year,
+                          occurredAt.month,
+                          occurredAt.day,
+                          time.hour,
+                          time.minute));
+                    }
+                  }),
+            ]),
             const SizedBox(height: AppSpace.md),
             TextField(
                 controller: description,
                 maxLength: 280,
-                decoration:
-                    const InputDecoration(labelText: 'Description (optional)')),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Date'),
-              subtitle: Text(
-                  '${occurredAt.year}-${occurredAt.month.toString().padLeft(2, '0')}-${occurredAt.day.toString().padLeft(2, '0')}'),
-              onTap: () async {
-                final date = await showDatePicker(
-                    context: context,
-                    firstDate: DateTime(2000),
-                    lastDate: DateTime(2100),
-                    initialDate: occurredAt);
-                if (date != null) {
-                  setDialogState(() => occurredAt = DateTime(
-                      date.year,
-                      date.month,
-                      date.day,
-                      occurredAt.hour,
-                      occurredAt.minute));
-                }
-              },
-            ),
+                decoration: const InputDecoration(
+                    prefixIcon: Icon(Icons.notes_rounded),
+                    labelText: 'Description',
+                    hintText: 'Optional note')),
             const SizedBox(height: AppSpace.md),
             FilledButton(
                 onPressed: categoryId == null ||
                         !RegExp(r'^[1-9]\d*$').hasMatch(amount.text)
                     ? null
                     : () => Navigator.pop(dialogContext, true),
-                child: const Text('Save')),
+                child: const Text('Save transaction')),
             TextButton(
                 onPressed: () => Navigator.pop(dialogContext, false),
                 child: const Text('Cancel')),
@@ -212,6 +277,33 @@ class _FinanceScreenState extends State<FinanceScreen> {
       amount.dispose();
       description.dispose();
     }
+  }
+
+  IconData _categoryIcon(String name) {
+    final value = name.toLowerCase();
+    if (value.contains('food')) return Icons.shopping_bag_outlined;
+    if (value.contains('transport')) return Icons.directions_car_outlined;
+    if (value.contains('shop')) return Icons.shopping_cart_outlined;
+    if (value.contains('bill')) return Icons.receipt_long_outlined;
+    return Icons.category_outlined;
+  }
+
+  String _formatDate(DateTime date) {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
+    return '${date.day.toString().padLeft(2, '0')} ${months[date.month - 1]} ${date.year}';
   }
 
   Future<void> _deleteTransaction(Map<String, dynamic> transaction) async {

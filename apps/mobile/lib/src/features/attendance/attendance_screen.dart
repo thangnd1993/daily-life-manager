@@ -213,6 +213,23 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                 const SizedBox(height: AppSpace.xl),
                 const SectionHeader(title: 'This month'),
                 const SizedBox(height: AppSpace.sm),
+                if (!loading && error == null)
+                  GlassSurface(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpace.lg, vertical: AppSpace.md),
+                    child: Row(children: [
+                      Text('${records.length}',
+                          style: Theme.of(context).textTheme.headlineMedium),
+                      const SizedBox(width: 6),
+                      Text(records.length == 1 ? 'day' : 'days'),
+                      const Spacer(),
+                      const StatusMark(label: 'Present', positive: true),
+                    ]),
+                  ),
+                if (!loading && error == null)
+                  const SizedBox(height: AppSpace.lg),
+                const SectionHeader(title: 'Recent check-ins'),
+                const SizedBox(height: AppSpace.sm),
                 if (!loading && error == null && records.isEmpty)
                   const AppStateCard(
                       icon: Icons.calendar_month_outlined,
