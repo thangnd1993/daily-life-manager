@@ -1,18 +1,22 @@
 import 'package:flutter/material.dart';
 
 abstract final class AppSpace {
-  static const double xxs = 4, xs = 8, sm = 12, md = 18;
-  static const double lg = 26, xl = 36, xxl = 52, page = 22, radius = 20;
+  static const double xxs = 4, xs = 8, sm = 12, md = 16;
+  static const double lg = 22, xl = 30, xxl = 42, page = 20, radius = 22;
 }
 
 abstract final class AppColors {
-  static const canvas = Color(0xfff4f5f2);
-  static const surface = Color(0xfffbfcf9);
-  static const ink = Color(0xff171a18);
-  static const secondary = Color(0xff68706b);
-  static const line = Color(0xffdfe3de);
-  static const accent = Color(0xff176b52);
-  static const accentSoft = Color(0xffdceee6);
+  static const canvas = Color(0xffeef1f0);
+  static const elevated = Color(0xfff8faf9);
+  static const surface = Color(0xfff7f9f8);
+  static const glass = Color(0xcceef3f1);
+  static const ink = Color(0xff17201d);
+  static const secondary = Color(0xff5f6b67);
+  static const tertiary = Color(0xff8a9490);
+  static const line = Color(0xffd7dfdc);
+  static const highlight = Color(0xe6ffffff);
+  static const accent = Color(0xff147259);
+  static const accentSoft = Color(0xffd7ebe3);
   static const danger = Color(0xffa63d40);
   static const warning = Color(0xff8b6419);
 }
@@ -37,34 +41,34 @@ abstract final class AppTheme {
     return ThemeData(
       useMaterial3: true,
       colorScheme: colors,
-      scaffoldBackgroundColor: AppColors.canvas,
+      scaffoldBackgroundColor: Colors.transparent,
       splashFactory: InkSparkle.splashFactory,
       textTheme: type.copyWith(
         displaySmall: type.displaySmall?.copyWith(
-          fontSize: 40,
+          fontSize: 36,
           height: 1.04,
           fontWeight: FontWeight.w600,
           letterSpacing: -1.4,
         ),
         headlineLarge: type.headlineLarge?.copyWith(
-          fontSize: 34,
+          fontSize: 28,
           height: 1.08,
           fontWeight: FontWeight.w600,
           letterSpacing: -1.1,
         ),
         headlineMedium: type.headlineMedium?.copyWith(
-          fontSize: 27,
+          fontSize: 24,
           height: 1.12,
           fontWeight: FontWeight.w600,
           letterSpacing: -.7,
         ),
         titleLarge: type.titleLarge?.copyWith(
-          fontSize: 20,
+          fontSize: 18,
           fontWeight: FontWeight.w600,
           letterSpacing: -.25,
         ),
         titleMedium: type.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-        bodyLarge: type.bodyLarge?.copyWith(fontSize: 16, height: 1.42),
+        bodyLarge: type.bodyLarge?.copyWith(fontSize: 15.5, height: 1.4),
         bodyMedium: type.bodyMedium?.copyWith(fontSize: 14, height: 1.4),
         labelLarge: type.labelLarge?.copyWith(fontWeight: FontWeight.w600),
         labelMedium: type.labelMedium?.copyWith(
@@ -87,7 +91,7 @@ abstract final class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: AppColors.surface,
+        fillColor: Colors.white.withValues(alpha: .72),
         labelStyle: const TextStyle(color: AppColors.secondary),
         hintStyle: const TextStyle(color: AppColors.secondary),
         border: OutlineInputBorder(
@@ -107,7 +111,7 @@ abstract final class AppTheme {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          minimumSize: const Size(48, 54),
+          minimumSize: const Size(48, 50),
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
@@ -115,7 +119,7 @@ abstract final class AppTheme {
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          minimumSize: const Size(48, 52),
+          minimumSize: const Size(48, 48),
           side: const BorderSide(color: AppColors.line),
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),

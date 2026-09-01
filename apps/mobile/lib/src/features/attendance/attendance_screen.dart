@@ -68,6 +68,31 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     }
   }
 
+  String _friendlyCheckInTime() {
+    final parsed = DateTime.tryParse(checkedInAt ?? '')?.toLocal();
+    return parsed == null
+        ? 'today'
+        : TimeOfDay.fromDateTime(parsed).format(context);
+  }
+
+  String _shortDate(DateTime date) {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
+    return '${date.day.toString().padLeft(2, '0')} ${months[date.month - 1]}';
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -94,36 +119,78 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                       message: error!,
                       onRetry: _load)
                 else
-                  Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(time,
-                            style: Theme.of(context).textTheme.displaySmall),
-                        const SizedBox(height: AppSpace.xs),
-                        Text('${now.day}/${now.month}/${now.year}',
-                            style: const TextStyle(color: AppColors.secondary)),
-                        const SizedBox(height: AppSpace.lg),
-                        StatusMark(
-                            label: checkedIn
-                                ? 'Checked in today'
-                                : 'Not checked in yet',
-                            positive: checkedIn),
-                        const SizedBox(height: AppSpace.md),
-                        Text(checkedIn ? 'You are all set' : 'Ready for today?',
-                            style: Theme.of(context).textTheme.headlineSmall),
-                        const SizedBox(height: AppSpace.xs),
-                        Text(checkedIn
-                            ? 'Recorded at ${checkedInAt ?? 'today'}.'
-                            : 'One tap records attendance using ${AppConfig.timezone}.'),
-                        const SizedBox(height: AppSpace.lg),
-                        SizedBox(
-                            width: double.infinity,
-                            child: FilledButton.icon(
-                                onPressed: checkedIn ? null : _checkIn,
-                                icon: const Icon(Icons.touch_app_outlined),
-                                label: Text(
-                                    checkedIn ? 'Complete' : 'Check in now'))),
-                      ]),
+                  GlassSurface(
+                    child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 260),
+                        child: Column(
+                            key: ValueKey(checkedIn),
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(children: [
+                                Expanded(
+                                    child: Text(time,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .displaySmall)),
+                                Container(
+                                    width: 52,
+                                    height: 52,
+                                    decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: checkedIn
+                                            ? AppColors.accent
+                                            : AppColors.ink),
+                                    child: Icon(
+                                        checkedIn
+                                            ? Icons.check_rounded
+                                            : Icons.fingerprint_rounded,
+                                        color: Colors.white,
+                                        size: 27)),
+                              ]),
+                              const SizedBox(height: AppSpace.xs),
+                              Text(_shortDate(now),
+                                  style: const TextStyle(
+                                      color: AppColors.secondary)),
+                              const SizedBox(height: AppSpace.lg),
+                              StatusMark(
+                                  label: checkedIn
+                                      ? 'Checked in today'
+                                      : 'Not checked in yet',
+                                  positive: checkedIn),
+                              const SizedBox(height: AppSpace.md),
+                              Text(
+                                  checkedIn
+                                      ? 'You are all set'
+                                      : 'Ready for today?',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headlineSmall),
+                              const SizedBox(height: AppSpace.xs),
+                              Text(checkedIn
+                                  ? 'Checked in at ${_friendlyCheckInTime()}.'
+                                  : 'One tap records attendance using ${AppConfig.timezone}.'),
+                              const SizedBox(height: AppSpace.lg),
+                              if (!checkedIn)
+                                SizedBox(
+                                    width: double.infinity,
+                                    child: FilledButton.icon(
+                                        onPressed: _checkIn,
+                                        icon: const Icon(
+                                            Icons.touch_app_outlined),
+                                        label: const Text('Check in now')))
+                              else
+                                Row(children: [
+                                  const Icon(Icons.verified_rounded,
+                                      color: AppColors.accent, size: 19),
+                                  const SizedBox(width: 8),
+                                  Text('Complete',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleMedium
+                                          ?.copyWith(color: AppColors.accent))
+                                ]),
+                            ])),
+                  ),
                 const SizedBox(height: AppSpace.xl),
                 const SectionHeader(title: 'This month'),
                 const SizedBox(height: AppSpace.sm),

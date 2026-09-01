@@ -101,6 +101,18 @@ class _GoldScreenState extends State<GoldScreen> {
     return '${digits.replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (match) => '.')} ₫';
   }
 
+  String _friendlyTime(dynamic value) {
+    final parsed = DateTime.tryParse(value?.toString() ?? '')?.toLocal();
+    if (parsed == null) return 'recently';
+    final now = DateTime.now();
+    final day = parsed.day == now.day &&
+            parsed.month == now.month &&
+            parsed.year == now.year
+        ? 'Today'
+        : '${parsed.day.toString().padLeft(2, '0')}/${parsed.month.toString().padLeft(2, '0')}';
+    return '$day · ${TimeOfDay.fromDateTime(parsed).format(context)}';
+  }
+
   Future<void> _select(String code) async {
     setState(() {
       selectedCode = code;
@@ -281,12 +293,11 @@ class _GoldScreenState extends State<GoldScreen> {
                     const SizedBox(height: 18),
                     ...prices
                         .where((item) => item['productCode'] == selectedCode)
-                        .map((item) => Padding(
-                            padding: const EdgeInsets.symmetric(
-                                vertical: AppSpace.md),
-                            child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
+                        .map((item) => GlassSurface(
+                                child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
                                   Text(item['productName'] as String,
                                       style: Theme.of(context)
                                           .textTheme
@@ -308,11 +319,11 @@ class _GoldScreenState extends State<GoldScreen> {
                                   Text(
                                       item['stale'] == true
                                           ? 'Stored price · may be delayed'
-                                          : 'Updated ${item['sourceTimestamp']}',
+                                          : 'Updated ${_friendlyTime(item['sourceTimestamp'])}',
                                       style: TextStyle(
                                           color: item['stale'] == true
-                                              ? Colors.orange.shade900
-                                              : Colors.green.shade800)),
+                                              ? AppColors.warning
+                                              : AppColors.accent)),
                                 ]))),
                     const SizedBox(height: 18),
                     CompactSegmented<int>(
@@ -333,7 +344,8 @@ class _GoldScreenState extends State<GoldScreen> {
                               .map((item) => AppRow(
                                   title:
                                       '${_money(item['buyPrice'])} buy · ${_money(item['sellPrice'])} sell',
-                                  subtitle: item['sourceTimestamp'] as String))
+                                  subtitle:
+                                      _friendlyTime(item['sourceTimestamp'])))
                               .toList()),
                     const SizedBox(height: 24),
                     Row(
@@ -358,7 +370,7 @@ class _GoldScreenState extends State<GoldScreen> {
                                         '${alert['productCode']} · ${_alertThreshold(alert)}',
                                     subtitle: alert['lastTriggeredAt'] == null
                                         ? 'Not triggered yet'
-                                        : 'Last triggered ${alert['lastTriggeredAt']}',
+                                        : 'Last triggered ${_friendlyTime(alert['lastTriggeredAt'])}',
                                     leading: Switch(
                                         value: alert['isEnabled'] == true,
                                         onChanged: (value) =>

@@ -298,6 +298,14 @@ class _FinanceScreenState extends State<FinanceScreen> {
       (analytics['trend'] as List<dynamic>? ?? const [])
           .cast<Map<String, dynamic>>();
 
+  double get _spendRatio {
+    final income =
+        double.tryParse(summary['totalIncome']?.toString() ?? '') ?? 0;
+    final expense =
+        double.tryParse(summary['totalExpense']?.toString() ?? '') ?? 0;
+    return income <= 0 ? 0 : (expense / income).clamp(0, 1);
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(automaticallyImplyLeading: false, toolbarHeight: 0),
@@ -342,22 +350,34 @@ class _FinanceScreenState extends State<FinanceScreen> {
                         message: error!,
                         onRetry: _load),
                   if (!loading && error == null) ...[
-                    Text(_money(summary['netBalance']),
-                        style: Theme.of(context).textTheme.displaySmall),
-                    const SizedBox(height: AppSpace.xs),
-                    Text('Net balance',
-                        style: Theme.of(context).textTheme.labelMedium),
-                    const SizedBox(height: AppSpace.lg),
-                    Row(children: [
-                      Expanded(
-                          child: _SummaryMetric(
-                              label: 'Income',
-                              value: _money(summary['totalIncome']))),
-                      Expanded(
-                          child: _SummaryMetric(
-                              label: 'Expense',
-                              value: _money(summary['totalExpense'])))
-                    ]),
+                    GlassSurface(
+                        child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                          Text('NET BALANCE',
+                              style: Theme.of(context).textTheme.labelMedium),
+                          const SizedBox(height: 6),
+                          Text(_money(summary['netBalance']),
+                              style: Theme.of(context).textTheme.displaySmall),
+                          const SizedBox(height: AppSpace.lg),
+                          Row(children: [
+                            Expanded(
+                                child: _SummaryMetric(
+                                    label: 'Income',
+                                    value: _money(summary['totalIncome']))),
+                            Expanded(
+                                child: _SummaryMetric(
+                                    label: 'Expense',
+                                    value: _money(summary['totalExpense'])))
+                          ]),
+                          const SizedBox(height: AppSpace.md),
+                          ClipRRect(
+                              borderRadius: BorderRadius.circular(4),
+                              child: LinearProgressIndicator(
+                                  value: _spendRatio,
+                                  minHeight: 6,
+                                  backgroundColor: AppColors.line)),
+                        ])),
                     const SizedBox(height: AppSpace.xl),
                     Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,

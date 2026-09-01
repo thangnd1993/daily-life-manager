@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../design/app_theme.dart';
+import '../design/app_widgets.dart';
 
 class AppShell extends StatelessWidget {
   const AppShell({required this.navigationShell, super.key});
@@ -27,25 +28,25 @@ class AppShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Scaffold(
         extendBody: true,
-        body: navigationShell,
+        body: AppBackground(child: navigationShell),
         bottomNavigationBar: SafeArea(
-          minimum: const EdgeInsets.fromLTRB(14, 0, 14, 10),
+          minimum: const EdgeInsets.fromLTRB(20, 0, 20, 12),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(28),
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
               child: Container(
-                height: 66,
+                height: 60,
                 decoration: BoxDecoration(
-                  color: AppColors.surface.withValues(alpha: .88),
-                  borderRadius: BorderRadius.circular(24),
+                  color: AppColors.glass.withValues(alpha: .78),
+                  borderRadius: BorderRadius.circular(28),
                   border:
                       Border.all(color: Colors.white.withValues(alpha: .75)),
                   boxShadow: const [
                     BoxShadow(
                         color: Color(0x18000000),
-                        blurRadius: 24,
-                        offset: Offset(0, 8))
+                        blurRadius: 30,
+                        offset: Offset(0, 12))
                   ],
                 ),
                 child: Row(
@@ -65,7 +66,7 @@ class AppShell extends StatelessWidget {
                             AnimatedContainer(
                               duration: const Duration(milliseconds: 180),
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 4),
+                                  horizontal: 14, vertical: 5),
                               decoration: BoxDecoration(
                                   color: selected
                                       ? AppColors.accentSoft
@@ -77,11 +78,11 @@ class AppShell extends StatelessWidget {
                                       ? AppColors.accent
                                       : AppColors.secondary),
                             ),
-                            const SizedBox(height: 2),
+                            const SizedBox(height: 1),
                             Text(item.$3,
                                 maxLines: 1,
                                 style: TextStyle(
-                                    fontSize: 9.5,
+                                    fontSize: 9,
                                     height: 1.1,
                                     fontWeight: selected
                                         ? FontWeight.w600

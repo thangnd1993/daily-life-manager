@@ -180,7 +180,9 @@ void main() {
     expect(find.text('Overall expenses'), findsOneWidget);
     await tester.scrollUntilVisible(find.text('Expense breakdown'), 250);
     expect(find.text('Expense breakdown'), findsOneWidget);
-    expect(find.text('Food'), findsOneWidget);
+    await tester.drag(find.byType(Scrollable).last, const Offset(0, -180));
+    await tester.pumpAndSettle();
+    expect(find.text('Food'), findsWidgets);
     await tester.scrollUntilVisible(find.text('Six-month trend'), 250);
     expect(find.text('Six-month trend'), findsOneWidget);
     await tester.scrollUntilVisible(find.text('Transactions'), 250);

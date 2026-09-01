@@ -1,6 +1,89 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
 
 import 'app_theme.dart';
+
+class AppBackground extends StatelessWidget {
+  const AppBackground({required this.child, super.key});
+  final Widget child;
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xfff8faf9), Color(0xffedf2f0), Color(0xfff4f1eb)],
+            stops: [0, .58, 1],
+          ),
+        ),
+        child: Stack(fit: StackFit.expand, children: [
+          const Positioned(
+              top: -110,
+              right: -90,
+              child: _AmbientOrb(color: Color(0x2244a88a), size: 270)),
+          const Positioned(
+              bottom: 80,
+              left: -120,
+              child: _AmbientOrb(color: Color(0x18d4a65c), size: 290)),
+          child,
+        ]),
+      );
+}
+
+class _AmbientOrb extends StatelessWidget {
+  const _AmbientOrb({required this.color, required this.size});
+  final Color color;
+  final double size;
+  @override
+  Widget build(BuildContext context) => ImageFiltered(
+        imageFilter: ImageFilter.blur(sigmaX: 42, sigmaY: 42),
+        child: Container(
+            width: size,
+            height: size,
+            decoration: BoxDecoration(shape: BoxShape.circle, color: color)),
+      );
+}
+
+class GlassSurface extends StatelessWidget {
+  const GlassSurface(
+      {required this.child,
+      this.padding = const EdgeInsets.all(20),
+      this.onTap,
+      this.radius = 26,
+      super.key});
+  final Widget child;
+  final EdgeInsetsGeometry padding;
+  final VoidCallback? onTap;
+  final double radius;
+  @override
+  Widget build(BuildContext context) => ClipRRect(
+        borderRadius: BorderRadius.circular(radius),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
+          child: Material(
+            color: AppColors.glass.withValues(alpha: .72),
+            child: InkWell(
+              onTap: onTap,
+              child: Container(
+                padding: padding,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(radius),
+                  border: Border.all(
+                      color: AppColors.highlight.withValues(alpha: .88)),
+                  boxShadow: const [
+                    BoxShadow(
+                        color: Color(0x140b2820),
+                        blurRadius: 28,
+                        offset: Offset(0, 12))
+                  ],
+                ),
+                child: child,
+              ),
+            ),
+          ),
+        ),
+      );
+}
 
 class PageHeader extends StatelessWidget {
   const PageHeader(
@@ -253,15 +336,27 @@ class AuthLayout extends StatelessWidget {
   final List<Widget> children;
   @override
   Widget build(BuildContext context) => Scaffold(
-        body: SafeArea(
-            child: SingleChildScrollView(
+        body: AppBackground(
+            child: SafeArea(
+                child: SingleChildScrollView(
           padding: EdgeInsets.fromLTRB(
               AppSpace.page,
-              AppSpace.xxl,
+              AppSpace.xl,
               AppSpace.page,
               MediaQuery.viewInsetsOf(context).bottom + AppSpace.lg),
           child:
               Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Align(
+                alignment: Alignment.centerLeft,
+                child: Container(
+                    width: 46,
+                    height: 46,
+                    decoration: BoxDecoration(
+                        color: AppColors.ink,
+                        borderRadius: BorderRadius.circular(15)),
+                    child: const Icon(Icons.blur_on_rounded,
+                        color: Colors.white))),
+            const SizedBox(height: AppSpace.xl),
             Text(title, style: Theme.of(context).textTheme.headlineLarge),
             const SizedBox(height: AppSpace.sm),
             Text(subtitle,
@@ -269,10 +364,13 @@ class AuthLayout extends StatelessWidget {
                     .textTheme
                     .bodyLarge
                     ?.copyWith(color: AppColors.secondary)),
-            const SizedBox(height: AppSpace.xl),
-            ...children,
+            const SizedBox(height: AppSpace.lg),
+            GlassSurface(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: children)),
           ]),
-        )),
+        ))),
       );
 }
 

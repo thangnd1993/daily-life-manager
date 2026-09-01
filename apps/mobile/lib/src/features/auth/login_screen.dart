@@ -16,6 +16,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final password = TextEditingController();
   String? error;
   bool busy = false;
+  bool obscurePassword = true;
 
   @override
   void dispose() {
@@ -47,12 +48,24 @@ class _LoginScreenState extends State<LoginScreen> {
           TextField(
               controller: email,
               keyboardType: TextInputType.emailAddress,
+              autofillHints: const [AutofillHints.email],
               decoration: const InputDecoration(labelText: 'Email')),
           const SizedBox(height: AppSpace.md),
           TextField(
               controller: password,
-              obscureText: true,
-              decoration: const InputDecoration(labelText: 'Password')),
+              obscureText: obscurePassword,
+              autofillHints: const [AutofillHints.password],
+              onSubmitted: (_) => busy ? null : submit(),
+              decoration: InputDecoration(
+                  labelText: 'Password',
+                  suffixIcon: IconButton(
+                      tooltip:
+                          obscurePassword ? 'Show password' : 'Hide password',
+                      onPressed: () =>
+                          setState(() => obscurePassword = !obscurePassword),
+                      icon: Icon(obscurePassword
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined)))),
           if (error != null) ...[
             const SizedBox(height: AppSpace.sm),
             Text(error!, style: const TextStyle(color: AppColors.danger))

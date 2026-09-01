@@ -110,19 +110,25 @@ class _HomeScreenState extends State<HomeScreen>
                     message: error!,
                     onRetry: _load)
               else ...[
-                InkWell(
+                GlassSurface(
                     onTap: () => context.go('/attendance'),
-                    borderRadius: BorderRadius.circular(16),
                     child: Padding(
-                      padding:
-                          const EdgeInsets.symmetric(vertical: AppSpace.sm),
+                      padding: EdgeInsets.zero,
                       child: Row(children: [
-                        Icon(
-                            checkedIn
-                                ? Icons.check_circle_rounded
-                                : Icons.schedule_rounded,
-                            size: 34,
-                            color: AppColors.accent),
+                        Container(
+                            width: 52,
+                            height: 52,
+                            decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: checkedIn
+                                    ? AppColors.accent
+                                    : AppColors.ink),
+                            child: Icon(
+                                checkedIn
+                                    ? Icons.check_circle_rounded
+                                    : Icons.schedule_rounded,
+                                size: 26,
+                                color: Colors.white)),
                         const SizedBox(width: AppSpace.md),
                         Expanded(
                             child: Column(
@@ -145,22 +151,37 @@ class _HomeScreenState extends State<HomeScreen>
                             color: AppColors.secondary),
                       ]),
                     )),
-                const SizedBox(height: AppSpace.xl),
+                const SizedBox(height: AppSpace.lg),
                 const SectionHeader(title: 'This month'),
                 const SizedBox(height: AppSpace.sm),
-                Text(_money(finance['netBalance']),
-                    style: Theme.of(context).textTheme.displaySmall),
-                const SizedBox(height: AppSpace.md),
-                Row(children: [
-                  Expanded(
-                      child: _Metric(
-                          label: 'Income',
-                          value: _money(finance['totalIncome']))),
-                  Expanded(
-                      child: _Metric(
-                          label: 'Spent',
-                          value: _money(finance['totalExpense']))),
-                ]),
+                GlassSurface(
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                      Text(_money(finance['netBalance']),
+                          style: Theme.of(context).textTheme.displaySmall),
+                      const SizedBox(height: 4),
+                      Text('Monthly net',
+                          style: Theme.of(context).textTheme.labelMedium),
+                      const SizedBox(height: AppSpace.md),
+                      Row(children: [
+                        Expanded(
+                            child: _Metric(
+                                label: 'Income',
+                                value: _money(finance['totalIncome']))),
+                        Expanded(
+                            child: _Metric(
+                                label: 'Spent',
+                                value: _money(finance['totalExpense']))),
+                      ]),
+                      const SizedBox(height: AppSpace.md),
+                      ClipRRect(
+                          borderRadius: BorderRadius.circular(6),
+                          child: const LinearProgressIndicator(
+                              value: .68,
+                              minHeight: 6,
+                              backgroundColor: AppColors.line)),
+                    ])),
                 const SizedBox(height: AppSpace.lg),
                 GroupedSurface(children: [
                   AppRow(
