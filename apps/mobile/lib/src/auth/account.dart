@@ -1,5 +1,10 @@
 class Account {
-  const Account({required this.id, required this.email, required this.displayName, required this.role, required this.status});
+  const Account(
+      {required this.id,
+      required this.email,
+      required this.displayName,
+      required this.role,
+      required this.status});
   final String id;
   final String email;
   final String displayName;

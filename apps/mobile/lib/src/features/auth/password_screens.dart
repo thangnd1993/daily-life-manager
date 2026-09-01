@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../network/api_client.dart';
+import '../../design/app_theme.dart';
+import '../../design/app_widgets.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({required this.api, super.key});
@@ -13,16 +15,28 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   String? message;
   Future<void> submit() async {
     await widget.api.forgotPassword(email.text);
-    if (mounted) setState(() => message = 'If that account exists, reset instructions have been requested.');
+    if (mounted) {
+      setState(() => message =
+          'If that account exists, reset instructions have been requested.');
+    }
   }
+
   @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Forgot password')),
-        body: ListView(padding: const EdgeInsets.all(24), children: [
-          TextField(controller: email, decoration: const InputDecoration(labelText: 'Email')),
+  Widget build(BuildContext context) => AuthLayout(
+        title: 'Forgot password',
+        subtitle:
+            'Enter your email and we’ll request secure reset instructions.',
+        children: [
+          TextField(
+              controller: email,
+              decoration: const InputDecoration(labelText: 'Email')),
+          const SizedBox(height: AppSpace.lg),
           FilledButton(onPressed: submit, child: const Text('Request reset')),
-          if (message != null) Text(message!),
-        ]),
+          if (message != null) ...[
+            const SizedBox(height: AppSpace.md),
+            Text(message!)
+          ],
+        ],
       );
 }
 
@@ -46,17 +60,31 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   String? message;
   Future<void> submit() async {
     await widget.api.resetPassword(token.text, password.text);
-    if (mounted) setState(() => message = 'Password reset. You can now sign in.');
+    if (mounted) {
+      setState(() => message = 'Password reset. You can now sign in.');
+    }
   }
+
   @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Reset password')),
-        body: ListView(padding: const EdgeInsets.all(24), children: [
-          TextField(controller: token, decoration: const InputDecoration(labelText: 'Reset token')),
-          TextField(controller: password, obscureText: true, decoration: const InputDecoration(labelText: 'New password')),
+  Widget build(BuildContext context) => AuthLayout(
+        title: 'Reset password',
+        subtitle: 'Use the secure token from your reset instructions.',
+        children: [
+          TextField(
+              controller: token,
+              decoration: const InputDecoration(labelText: 'Reset token')),
+          const SizedBox(height: AppSpace.md),
+          TextField(
+              controller: password,
+              obscureText: true,
+              decoration: const InputDecoration(labelText: 'New password')),
+          const SizedBox(height: AppSpace.lg),
           FilledButton(onPressed: submit, child: const Text('Reset password')),
-          if (message != null) Text(message!),
-        ]),
+          if (message != null) ...[
+            const SizedBox(height: AppSpace.md),
+            Text(message!)
+          ],
+        ],
       );
 }
 
@@ -66,16 +94,33 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   String? message;
   Future<void> submit() async {
     await widget.api.changePassword(current.text, next.text);
-    if (mounted) setState(() => message = 'Password changed. Other sessions were signed out.');
+    if (mounted) {
+      setState(
+          () => message = 'Password changed. Other sessions were signed out.');
+    }
   }
+
   @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Change password')),
-        body: ListView(padding: const EdgeInsets.all(24), children: [
-          TextField(controller: current, obscureText: true, decoration: const InputDecoration(labelText: 'Current password')),
-          TextField(controller: next, obscureText: true, decoration: const InputDecoration(labelText: 'New password')),
+  Widget build(BuildContext context) => AuthLayout(
+        title: 'Change password',
+        subtitle:
+            'Choose a new password and securely close your other sessions.',
+        children: [
+          TextField(
+              controller: current,
+              obscureText: true,
+              decoration: const InputDecoration(labelText: 'Current password')),
+          const SizedBox(height: AppSpace.md),
+          TextField(
+              controller: next,
+              obscureText: true,
+              decoration: const InputDecoration(labelText: 'New password')),
+          const SizedBox(height: AppSpace.lg),
           FilledButton(onPressed: submit, child: const Text('Change password')),
-          if (message != null) Text(message!),
-        ]),
+          if (message != null) ...[
+            const SizedBox(height: AppSpace.md),
+            Text(message!)
+          ],
+        ],
       );
 }

@@ -17,8 +17,12 @@ class MemoryStore implements TokenStore {
 }
 
 void main() {
-  test('refreshes once, rotates secure tokens, and retries the protected request', () async {
-    final store = MemoryStore()..tokens = const AuthTokens(accessToken: 'expired', refreshToken: 'refresh-1');
+  test(
+      'refreshes once, rotates secure tokens, and retries the protected request',
+      () async {
+    final store = MemoryStore()
+      ..tokens =
+          const AuthTokens(accessToken: 'expired', refreshToken: 'refresh-1');
     var profileCalls = 0;
     final client = MockClient((request) async {
       if (request.url.path.endsWith('/auth/refresh')) {
@@ -26,7 +30,13 @@ void main() {
           jsonEncode({
             'accessToken': 'access-2',
             'refreshToken': 'refresh-2',
-            'user': {'id': '1', 'email': 'u@example.com', 'displayName': 'User', 'role': 'USER', 'status': 'ACTIVE'},
+            'user': {
+              'id': '1',
+              'email': 'u@example.com',
+              'displayName': 'User',
+              'role': 'USER',
+              'status': 'ACTIVE'
+            },
           }),
           200,
         );
@@ -35,7 +45,13 @@ void main() {
       if (profileCalls == 1) return http.Response('', 401);
       expect(request.headers['Authorization'], 'Bearer access-2');
       return http.Response(
-        jsonEncode({'id': '1', 'email': 'u@example.com', 'displayName': 'User', 'role': 'USER', 'status': 'ACTIVE'}),
+        jsonEncode({
+          'id': '1',
+          'email': 'u@example.com',
+          'displayName': 'User',
+          'role': 'USER',
+          'status': 'ACTIVE'
+        }),
         200,
       );
     });
@@ -77,9 +93,11 @@ void main() {
           return http.Response(jsonEncode({'id': 'attendance-1'}), 201);
         }
         if (request.url.path.endsWith('/today')) {
-          return http.Response(jsonEncode({'checkedIn': false, 'record': null}), 200);
+          return http.Response(
+              jsonEncode({'checkedIn': false, 'record': null}), 200);
         }
-        return http.Response(jsonEncode({'items': [], 'checkedInDays': 0}), 200);
+        return http.Response(
+            jsonEncode({'items': [], 'checkedInDays': 0}), 200);
       }),
     );
     expect((await api.attendanceToday('Asia/Ho_Chi_Minh'))['checkedIn'], false);
@@ -89,17 +107,40 @@ void main() {
     expect(jsonDecode(requests[1].body)['timezone'], 'Asia/Ho_Chi_Minh');
   });
 
-  test('maps finance summary, categories, transaction CRUD, and BigInt strings', () async {
+  test('maps finance summary, categories, transaction CRUD, and BigInt strings',
+      () async {
     final requests = <http.Request>[];
-    final api = ApiClient(tokenStore: MemoryStore(), client: MockClient((request) async {
-      requests.add(request);
-      if (request.url.path.endsWith('/categories')) return http.Response(request.method == 'GET' ? jsonEncode([{'id': 'food', 'name': 'Food', 'type': 'EXPENSE'}]) : jsonEncode({'id': 'personal'}), 200);
-      if (request.url.path.endsWith('/summary')) return http.Response(jsonEncode({'totalIncome': '1000000000000000', 'totalExpense': '1', 'netBalance': '999999999999999'}), 200);
-      if (request.method == 'DELETE') return http.Response('', 204);
-      if (request.method == 'GET') return http.Response(jsonEncode({'items': []}), 200);
-      return http.Response(jsonEncode({'id': 'tx-1', 'amount': '150000'}), 200);
-    }));
-    expect((await api.financeSummary(2026, 8))['totalIncome'], '1000000000000000');
+    final api = ApiClient(
+        tokenStore: MemoryStore(),
+        client: MockClient((request) async {
+          requests.add(request);
+          if (request.url.path.endsWith('/categories')) {
+            return http.Response(
+                request.method == 'GET'
+                    ? jsonEncode([
+                        {'id': 'food', 'name': 'Food', 'type': 'EXPENSE'}
+                      ])
+                    : jsonEncode({'id': 'personal'}),
+                200);
+          }
+          if (request.url.path.endsWith('/summary')) {
+            return http.Response(
+                jsonEncode({
+                  'totalIncome': '1000000000000000',
+                  'totalExpense': '1',
+                  'netBalance': '999999999999999'
+                }),
+                200);
+          }
+          if (request.method == 'DELETE') return http.Response('', 204);
+          if (request.method == 'GET') {
+            return http.Response(jsonEncode({'items': []}), 200);
+          }
+          return http.Response(
+              jsonEncode({'id': 'tx-1', 'amount': '150000'}), 200);
+        }));
+    expect(
+        (await api.financeSummary(2026, 8))['totalIncome'], '1000000000000000');
     expect((await api.financeCategories()).first['name'], 'Food');
     await api.financeTransactions(2026, 8);
     await api.createFinanceTransaction({'amount': '150000'});
@@ -112,16 +153,33 @@ void main() {
 
   test('maps budget and analytics endpoints with string money', () async {
     final requests = <http.Request>[];
-    final api = ApiClient(tokenStore: MemoryStore(), client: MockClient((request) async {
-      requests.add(request);
-      if (request.url.path.endsWith('/analytics')) return http.Response(jsonEncode({'trend': [], 'expenseByCategory': []}), 200);
-      if (request.method == 'GET') return http.Response(jsonEncode([{'id': 'budget-1', 'amount': '5000000', 'spentAmount': '1000000'}]), 200);
-      if (request.method == 'DELETE') return http.Response('', 204);
-      return http.Response(jsonEncode({'id': 'budget-1', 'amount': '5000000'}), 200);
-    }));
+    final api = ApiClient(
+        tokenStore: MemoryStore(),
+        client: MockClient((request) async {
+          requests.add(request);
+          if (request.url.path.endsWith('/analytics')) {
+            return http.Response(
+                jsonEncode({'trend': [], 'expenseByCategory': []}), 200);
+          }
+          if (request.method == 'GET') {
+            return http.Response(
+                jsonEncode([
+                  {
+                    'id': 'budget-1',
+                    'amount': '5000000',
+                    'spentAmount': '1000000'
+                  }
+                ]),
+                200);
+          }
+          if (request.method == 'DELETE') return http.Response('', 204);
+          return http.Response(
+              jsonEncode({'id': 'budget-1', 'amount': '5000000'}), 200);
+        }));
     expect((await api.financeBudgets(2026, 8)).first['amount'], '5000000');
     await api.financeAnalytics(2026, 8);
-    await api.upsertFinanceBudget({'year': 2026, 'month': 8, 'amount': '5000000', 'currency': 'VND'});
+    await api.upsertFinanceBudget(
+        {'year': 2026, 'month': 8, 'amount': '5000000', 'currency': 'VND'});
     await api.updateFinanceBudget('budget-1', '6000000');
     await api.deleteFinanceBudget('budget-1');
     expect(requests.first.url.queryParameters['month'], '8');
@@ -131,11 +189,25 @@ void main() {
 
   test('maps latest gold prices and bounded history', () async {
     final requests = <http.Request>[];
-    final api = ApiClient(tokenStore: MemoryStore(), client: MockClient((request) async {
-      requests.add(request);
-      if (request.url.path.endsWith('/history')) return http.Response(jsonEncode({'productCode': 'SJC', 'days': 7, 'items': []}), 200);
-      return http.Response(jsonEncode([{'productCode': 'SJC', 'buyPrice': '88500000', 'sellPrice': '90500000'}]), 200);
-    }));
+    final api = ApiClient(
+        tokenStore: MemoryStore(),
+        client: MockClient((request) async {
+          requests.add(request);
+          if (request.url.path.endsWith('/history')) {
+            return http.Response(
+                jsonEncode({'productCode': 'SJC', 'days': 7, 'items': []}),
+                200);
+          }
+          return http.Response(
+              jsonEncode([
+                {
+                  'productCode': 'SJC',
+                  'buyPrice': '88500000',
+                  'sellPrice': '90500000'
+                }
+              ]),
+              200);
+        }));
     expect((await api.goldPrices()).first['buyPrice'], '88500000');
     expect((await api.goldHistory('SJC', 7))['days'], 7);
     expect(requests.last.url.queryParameters['days'], '7');
@@ -144,16 +216,37 @@ void main() {
 
   test('maps gold alert CRUD, toggle, and trigger history', () async {
     final requests = <http.Request>[];
-    final api = ApiClient(tokenStore: MemoryStore(), client: MockClient((request) async {
-      requests.add(request);
-      if (request.url.path.endsWith('/triggers')) return http.Response(jsonEncode([{'id': 'trigger-1', 'observedBuyPrice': '90000000'}]), 200);
-      if (request.method == 'GET') return http.Response(jsonEncode([{'id': 'alert-1', 'condition': 'ABOVE', 'thresholdAmount': '90000000'}]), 200);
-      if (request.method == 'DELETE') return http.Response('', 204);
-      return http.Response(jsonEncode({'id': 'alert-1', 'isEnabled': true}), 200);
-    }));
+    final api = ApiClient(
+        tokenStore: MemoryStore(),
+        client: MockClient((request) async {
+          requests.add(request);
+          if (request.url.path.endsWith('/triggers')) {
+            return http.Response(
+                jsonEncode([
+                  {'id': 'trigger-1', 'observedBuyPrice': '90000000'}
+                ]),
+                200);
+          }
+          if (request.method == 'GET') {
+            return http.Response(
+                jsonEncode([
+                  {
+                    'id': 'alert-1',
+                    'condition': 'ABOVE',
+                    'thresholdAmount': '90000000'
+                  }
+                ]),
+                200);
+          }
+          if (request.method == 'DELETE') return http.Response('', 204);
+          return http.Response(
+              jsonEncode({'id': 'alert-1', 'isEnabled': true}), 200);
+        }));
     expect((await api.goldAlerts()).first['thresholdAmount'], '90000000');
-    expect((await api.goldAlertTriggers()).first['observedBuyPrice'], '90000000');
-    await api.createGoldAlert({'productCode': 'SJC', 'thresholdAmount': '90000000'});
+    expect(
+        (await api.goldAlertTriggers()).first['observedBuyPrice'], '90000000');
+    await api
+        .createGoldAlert({'productCode': 'SJC', 'thresholdAmount': '90000000'});
     await api.updateGoldAlert('alert-1', {'thresholdAmount': '91000000'});
     await api.setGoldAlertEnabled('alert-1', false);
     await api.deleteGoldAlert('alert-1');

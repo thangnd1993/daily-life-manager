@@ -8,7 +8,8 @@ abstract interface class TokenStore {
 }
 
 class SecureTokenStore implements TokenStore {
-  SecureTokenStore([FlutterSecureStorage? storage]) : _storage = storage ?? const FlutterSecureStorage();
+  SecureTokenStore([FlutterSecureStorage? storage])
+      : _storage = storage ?? const FlutterSecureStorage();
   final FlutterSecureStorage _storage;
   static const _accessKey = 'auth_access_token';
   static const _refreshKey = 'auth_refresh_token';
@@ -18,7 +19,9 @@ class SecureTokenStore implements TokenStore {
     final values = await _storage.readAll();
     final access = values[_accessKey];
     final refresh = values[_refreshKey];
-    return access == null || refresh == null ? null : AuthTokens(accessToken: access, refreshToken: refresh);
+    return access == null || refresh == null
+        ? null
+        : AuthTokens(accessToken: access, refreshToken: refresh);
   }
 
   @override

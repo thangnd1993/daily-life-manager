@@ -75,31 +75,34 @@ class _HomeScreenState extends State<HomeScreen>
     final activeAlerts =
         alerts.where((item) => item['isEnabled'] == true).length;
     final firstPrice = prices.isEmpty ? null : prices.first;
+    final now = DateTime.now();
+    final greeting = now.hour < 12
+        ? 'Good morning'
+        : now.hour < 18
+            ? 'Good afternoon'
+            : 'Good evening';
     return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('Today',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
-          Text('Hello, ${widget.auth.account?.displayName ?? 'User'}'),
-        ]),
-        actions: [
-          IconButton(
-              tooltip: 'Refresh overview',
-              onPressed: loading ? null : _load,
-              icon: const Icon(Icons.refresh))
-        ],
-      ),
       body: RefreshIndicator(
         onRefresh: _load,
         child: ListView(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+            padding: const EdgeInsets.fromLTRB(
+                AppSpace.page, 20, AppSpace.page, 120),
             children: [
+              PageHeader(
+                eyebrow: 'Today · ${now.day}/${now.month}/${now.year}',
+                title:
+                    '$greeting,\n${widget.auth.account?.displayName ?? 'User'}',
+                trailing: IconButton(
+                    tooltip: 'Refresh overview',
+                    onPressed: loading ? null : _load,
+                    icon: const Icon(Icons.refresh_rounded)),
+              ),
+              const SizedBox(height: AppSpace.xl),
               if (loading)
-                const GlassCard(
+                const Center(
                     child: Padding(
-                        padding: EdgeInsets.all(28),
-                        child: Center(child: CircularProgressIndicator())))
+                        padding: EdgeInsets.all(48),
+                        child: CircularProgressIndicator()))
               else if (error != null)
                 AppStateCard(
                     icon: Icons.cloud_off_outlined,
@@ -107,71 +110,82 @@ class _HomeScreenState extends State<HomeScreen>
                     message: error!,
                     onRetry: _load)
               else ...[
-                GlassCard(
+                InkWell(
                     onTap: () => context.go('/attendance'),
-                    child: Row(children: [
-                      Icon(checkedIn ? Icons.check_circle : Icons.schedule,
-                          size: 34,
-                          color: checkedIn
-                              ? Colors.green.shade700
-                              : Theme.of(context).colorScheme.primary),
-                      const SizedBox(width: AppSpace.md),
-                      Expanded(
-                          child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                            Text(
-                                checkedIn
-                                    ? 'Checked in today'
-                                    : 'Attendance is waiting',
-                                style: Theme.of(context).textTheme.titleLarge),
-                            const SizedBox(height: 4),
-                            Text(checkedIn
-                                ? 'Your daily record is complete.'
-                                : 'Check in from the Attendance tab.'),
-                          ])),
-                      const Icon(Icons.chevron_right),
-                    ])),
+                    borderRadius: BorderRadius.circular(16),
+                    child: Padding(
+                      padding:
+                          const EdgeInsets.symmetric(vertical: AppSpace.sm),
+                      child: Row(children: [
+                        Icon(
+                            checkedIn
+                                ? Icons.check_circle_rounded
+                                : Icons.schedule_rounded,
+                            size: 34,
+                            color: AppColors.accent),
+                        const SizedBox(width: AppSpace.md),
+                        Expanded(
+                            child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                              StatusMark(
+                                  label: checkedIn
+                                      ? 'Checked in today'
+                                      : 'Attendance is waiting',
+                                  positive: checkedIn),
+                              const SizedBox(height: 4),
+                              Text(
+                                  checkedIn
+                                      ? 'Your daily record is complete.'
+                                      : 'One tap is waiting in Attendance.',
+                                  style:
+                                      Theme.of(context).textTheme.titleMedium),
+                            ])),
+                        const Icon(Icons.chevron_right_rounded,
+                            color: AppColors.secondary),
+                      ]),
+                    )),
+                const SizedBox(height: AppSpace.xl),
+                const SectionHeader(title: 'This month'),
+                const SizedBox(height: AppSpace.sm),
+                Text(_money(finance['netBalance']),
+                    style: Theme.of(context).textTheme.displaySmall),
                 const SizedBox(height: AppSpace.md),
-                _OverviewCard(
-                    icon: Icons.account_balance_wallet_outlined,
-                    title: 'This month',
-                    value: _money(finance['netBalance']),
-                    detail:
-                        '${_money(finance['totalIncome'])} in · ${_money(finance['totalExpense'])} out',
-                    onTap: () => context.go('/finance')),
-                const SizedBox(height: AppSpace.md),
-                _OverviewCard(
-                    icon: Icons.savings_outlined,
-                    title: 'Budgets',
-                    value: budgets.isEmpty
-                        ? 'No budget set'
-                        : '${budgets.length} active',
-                    detail: budgets.isEmpty
-                        ? 'Set a monthly spending target.'
-                        : 'Review current usage and remaining amounts.',
-                    onTap: () => context.go('/finance')),
-                const SizedBox(height: AppSpace.md),
-                _OverviewCard(
-                    icon: Icons.auto_awesome_outlined,
-                    title:
-                        firstPrice?['productName'] as String? ?? 'Gold prices',
-                    value: firstPrice == null
-                        ? 'No stored price'
-                        : '${_money(firstPrice['buyPrice'])} buy',
-                    detail: firstPrice == null
-                        ? 'Pull to refresh when provider data is available.'
-                        : '${_money(firstPrice['sellPrice'])} sell · ${firstPrice['stale'] == true ? 'stored' : 'latest'}',
-                    onTap: () => context.go('/gold')),
-                const SizedBox(height: AppSpace.md),
-                _OverviewCard(
-                    icon: Icons.notifications_active_outlined,
-                    title: 'Gold alerts',
-                    value: '$activeAlerts active',
-                    detail: alerts.isEmpty
-                        ? 'Create an alert from Gold.'
-                        : '${alerts.length} configured in total.',
-                    onTap: () => context.go('/gold')),
+                Row(children: [
+                  Expanded(
+                      child: _Metric(
+                          label: 'Income',
+                          value: _money(finance['totalIncome']))),
+                  Expanded(
+                      child: _Metric(
+                          label: 'Spent',
+                          value: _money(finance['totalExpense']))),
+                ]),
+                const SizedBox(height: AppSpace.lg),
+                GroupedSurface(children: [
+                  AppRow(
+                      title: 'Budgets',
+                      subtitle: budgets.isEmpty
+                          ? 'No budget set'
+                          : '${budgets.length} active',
+                      trailing: const Icon(Icons.chevron_right_rounded),
+                      onTap: () => context.go('/finance')),
+                  AppRow(
+                      title: firstPrice?['productName'] as String? ??
+                          'Gold prices',
+                      subtitle: firstPrice == null
+                          ? 'No stored price'
+                          : '${_money(firstPrice['buyPrice'])} buy · ${_money(firstPrice['sellPrice'])} sell',
+                      trailing: const Icon(Icons.chevron_right_rounded),
+                      onTap: () => context.go('/gold')),
+                  if (activeAlerts > 0)
+                    AppRow(
+                        title: 'Gold alerts',
+                        subtitle:
+                            '$activeAlerts enabled alert${activeAlerts == 1 ? '' : 's'}',
+                        trailing: const Icon(Icons.chevron_right_rounded),
+                        onTap: () => context.go('/gold')),
+                ]),
               ],
             ]),
       ),
@@ -179,41 +193,15 @@ class _HomeScreenState extends State<HomeScreen>
   }
 }
 
-class _OverviewCard extends StatelessWidget {
-  const _OverviewCard(
-      {required this.icon,
-      required this.title,
-      required this.value,
-      required this.detail,
-      required this.onTap});
-  final IconData icon;
-  final String title;
+class _Metric extends StatelessWidget {
+  const _Metric({required this.label, required this.value});
+  final String label;
   final String value;
-  final String detail;
-  final VoidCallback onTap;
   @override
-  Widget build(BuildContext context) => GlassCard(
-        onTap: onTap,
-        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(15)),
-              child: Icon(icon)),
-          const SizedBox(width: AppSpace.md),
-          Expanded(
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                Text(title),
-                const SizedBox(height: 3),
-                Text(value, style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: 3),
-                Text(detail, maxLines: 2, overflow: TextOverflow.ellipsis)
-              ])),
-          const Icon(Icons.chevron_right),
-        ]),
-      );
+  Widget build(BuildContext context) =>
+      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(label, style: Theme.of(context).textTheme.labelMedium),
+        const SizedBox(height: 4),
+        Text(value, style: Theme.of(context).textTheme.titleLarge),
+      ]);
 }
