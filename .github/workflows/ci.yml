@@ -115,3 +115,5 @@ jobs:
       - run: flutter pub get
       - run: flutter analyze
       - run: flutter test
+      - name: Compile unsigned Android release APK
+        run: flutter build apk --release --dart-define=API_URL=https://mobile-ci.invalid/api

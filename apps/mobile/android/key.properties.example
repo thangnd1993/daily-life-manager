@@ -1,0 +1,5 @@
+# Copy to ignored android/key.properties and replace every placeholder.
+storePassword=CHANGE_ME
+keyPassword=CHANGE_ME
+keyAlias=CHANGE_ME
+storeFile=CHANGE_ME_ABSOLUTE_OR_APP_RELATIVE_KEYSTORE_PATH

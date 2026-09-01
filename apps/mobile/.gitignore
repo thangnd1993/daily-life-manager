@@ -33,6 +33,10 @@ migrate_working_dir/
 /build/
 /coverage/
 
+# Production Firebase configuration is supplied outside Git.
+/android/app/google-services.json
+/ios/Runner/GoogleService-Info.plist
+
 # Symbolication related
 app.*.symbols
 

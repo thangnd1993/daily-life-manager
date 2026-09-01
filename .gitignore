@@ -12,6 +12,9 @@ coverage/
 .idea/
 .vscode/
 *.iml
+*.jks
+*.keystore
+key.properties
 apps/mobile/build/
 apps/mobile/ios/Pods/
 apps/mobile/ios/Flutter/ephemeral/
