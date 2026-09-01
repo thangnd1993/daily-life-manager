@@ -14,7 +14,8 @@
 - [x] Milestone 12 — Security hardening and audit logging
 - [x] Milestone 13 — Comprehensive automated testing
 - [x] Milestone 14 — Production Docker and deployment preparation
-- [ ] Milestone 15 — iOS and Android release preparation
+- [x] Milestone 15 — iOS and Android release preparation
 
-Milestones 1–14 are complete. GitHub-hosted CI verifies the API with PostgreSQL and Redis, the authenticated Angular admin
-portal, the Flutter application, and the production Docker packaging. Milestone 15 remains pending.
+Milestones 1–15 are complete. GitHub-hosted CI verifies the API with PostgreSQL and Redis, the authenticated Angular admin
+portal, the Flutter application and unsigned Android release compilation, and the production Docker packaging. All planned
+roadmap milestones are complete.
