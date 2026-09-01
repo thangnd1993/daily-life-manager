@@ -85,6 +85,22 @@ jobs:
       - run: npm run test:ci
       - run: npm run build
 
+  production-packaging:
+    runs-on: ubuntu-latest
+    env:
+      POSTGRES_DB: ci
+      POSTGRES_USER: ci
+      POSTGRES_PASSWORD: ci-only-database-password
+      DATABASE_URL: postgresql://ci:ci-only-database-password@postgres:5432/ci?schema=public
+      JWT_ACCESS_SECRET: ci-only-access-secret-with-at-least-32-characters
+      CORS_ORIGINS: http://localhost:8080
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate production Compose configuration
+        run: docker compose -f compose.prod.yml config --quiet
+      - name: Build production images
+        run: docker compose -f compose.prod.yml build api admin-web migrate
+
   mobile:
     runs-on: ubuntu-latest
     defaults:

@@ -1,6 +1,8 @@
 .DS_Store
 .env
 .env.local
+.env.production
+!.env.production.example
 node_modules/
 dist/
 coverage/

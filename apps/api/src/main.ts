@@ -10,6 +10,11 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const config = app.get(ConfigService);
   const prefix = config.get<string>('app.apiPrefix', 'api');
+  const trustProxyHops = config.get<number>('app.trustProxyHops', 0);
+  if (trustProxyHops > 0) {
+    app.getHttpAdapter().getInstance().set('trust proxy', trustProxyHops);
+  }
+  app.enableShutdownHooks();
   app.use(helmet());
   app.use(json({ limit: '100kb' }));
   app.enableCors({

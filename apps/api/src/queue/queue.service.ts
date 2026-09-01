@@ -11,6 +11,8 @@ export class QueueService implements OnModuleDestroy {
       port: config.get<number>('REDIS_PORT', 6379),
       lazyConnect: true,
       maxRetriesPerRequest: null,
+      connectTimeout: 2000,
+      commandTimeout: 2000,
     });
   }
   async isHealthy(): Promise<boolean> {

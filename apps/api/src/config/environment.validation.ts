@@ -37,6 +37,7 @@ export const environmentSchema = Joi.object({
     .valid('development', 'test', 'production')
     .default('development'),
   PORT: Joi.number().port().default(3000),
+  TRUST_PROXY_HOPS: Joi.number().integer().min(0).max(3).default(0),
   REDIS_HOST: Joi.string().hostname().default('localhost'),
   REDIS_PORT: Joi.number().port().default(6379),
   REFRESH_TOKEN_TTL_DAYS: Joi.number().integer().min(1).max(365).default(30),

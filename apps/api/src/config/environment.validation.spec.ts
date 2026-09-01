@@ -22,4 +22,13 @@ describe('environment validation security', () => {
     });
     expect(result.error).toBeUndefined();
   });
+
+  it('bounds the number of trusted reverse proxies', () => {
+    expect(
+      environmentSchema.validate({ ...valid, TRUST_PROXY_HOPS: 1 }).error,
+    ).toBeUndefined();
+    expect(
+      environmentSchema.validate({ ...valid, TRUST_PROXY_HOPS: 4 }).error,
+    ).toBeDefined();
+  });
 });

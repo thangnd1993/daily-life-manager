@@ -7,4 +7,5 @@ export const appConfig = registerAs('app', () => ({
     .map((origin) => origin.trim()),
   environment: process.env.NODE_ENV ?? 'development',
   port: Number(process.env.PORT ?? 3000),
+  trustProxyHops: Number(process.env.TRUST_PROXY_HOPS ?? 0),
 }));
