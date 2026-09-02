@@ -156,13 +156,13 @@ describe('AttendanceService', () => {
 
   it('requires a reason for OFF and stores zero minutes without counting a worked day', async () => {
     await expect(
-      service.updateDay('user-1', '2026-08-20', {
+      service.updateDay('user-1', '2000-01-20', {
         workedMinutes: 0,
         timezone: 'UTC',
       }),
     ).rejects.toBeInstanceOf(BadRequestException);
     prisma.attendance.upsert.mockResolvedValue({ id: 'off-1' });
-    await service.updateDay('user-1', '2026-08-20', {
+    await service.updateDay('user-1', '2000-01-20', {
       workedMinutes: 0,
       timezone: 'UTC',
       offReason: 'Sick leave',
