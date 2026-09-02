@@ -69,6 +69,21 @@ class _HomeScreenState extends State<HomeScreen>
     return '${digits.replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => '.')} ₫';
   }
 
+  String _month(int month) => const [
+        'JAN',
+        'FEB',
+        'MAR',
+        'APR',
+        'MAY',
+        'JUN',
+        'JUL',
+        'AUG',
+        'SEP',
+        'OCT',
+        'NOV',
+        'DEC'
+      ][month - 1];
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -88,16 +103,30 @@ class _HomeScreenState extends State<HomeScreen>
             padding: const EdgeInsets.fromLTRB(
                 AppSpace.page, 20, AppSpace.page, 120),
             children: [
-              PageHeader(
-                eyebrow: 'Today · ${now.day}/${now.month}/${now.year}',
-                title:
-                    '$greeting,\n${widget.auth.account?.displayName ?? 'User'}',
-                trailing: IconButton(
-                    tooltip: 'Refresh overview',
+              Row(children: [
+                const Icon(Icons.menu_rounded, size: 22),
+                const Spacer(),
+                IconButton(
                     onPressed: loading ? null : _load,
-                    icon: const Icon(Icons.refresh_rounded)),
-              ),
-              const SizedBox(height: AppSpace.xl),
+                    icon:
+                        const Icon(Icons.notifications_none_rounded, size: 21)),
+                CircleAvatar(
+                    radius: 17,
+                    backgroundColor: AppColors.accentSoft,
+                    child: Text(
+                        (widget.auth.account?.displayName ?? 'U')
+                            .substring(0, 1),
+                        style: const TextStyle(color: AppColors.accent))),
+              ]),
+              const SizedBox(height: AppSpace.sm),
+              Text(
+                  'TODAY · ${now.day.toString().padLeft(2, '0')} ${_month(now.month)} ${now.year}',
+                  style: Theme.of(context).textTheme.labelMedium),
+              const SizedBox(height: 6),
+              Text(
+                  '$greeting,\n${widget.auth.account?.displayName ?? 'User'} 👋',
+                  style: Theme.of(context).textTheme.headlineMedium),
+              const SizedBox(height: AppSpace.md),
               if (loading)
                 const Center(
                     child: Padding(
@@ -111,13 +140,14 @@ class _HomeScreenState extends State<HomeScreen>
                     onRetry: _load)
               else ...[
                 GlassSurface(
+                    padding: const EdgeInsets.all(14),
                     onTap: () => context.go('/attendance'),
                     child: Padding(
                       padding: EdgeInsets.zero,
                       child: Row(children: [
                         Container(
-                            width: 52,
-                            height: 52,
+                            width: 44,
+                            height: 44,
                             decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 color: checkedIn
@@ -127,7 +157,7 @@ class _HomeScreenState extends State<HomeScreen>
                                 checkedIn
                                     ? Icons.check_circle_rounded
                                     : Icons.schedule_rounded,
-                                size: 26,
+                                size: 22,
                                 color: Colors.white)),
                         const SizedBox(width: AppSpace.md),
                         Expanded(
@@ -142,8 +172,8 @@ class _HomeScreenState extends State<HomeScreen>
                               const SizedBox(height: 4),
                               Text(
                                   checkedIn
-                                      ? 'Your daily record is complete.'
-                                      : 'One tap is waiting in Attendance.',
+                                      ? 'You are all set'
+                                      : 'Ready to check in',
                                   style:
                                       Theme.of(context).textTheme.titleMedium),
                             ])),
@@ -151,37 +181,58 @@ class _HomeScreenState extends State<HomeScreen>
                             color: AppColors.secondary),
                       ]),
                     )),
-                const SizedBox(height: AppSpace.lg),
-                const SectionHeader(title: 'This month'),
                 const SizedBox(height: AppSpace.sm),
                 GlassSurface(
+                    padding: const EdgeInsets.all(16),
                     child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                      Text(_money(finance['netBalance']),
-                          style: Theme.of(context).textTheme.displaySmall),
-                      const SizedBox(height: 4),
-                      Text('Monthly net',
-                          style: Theme.of(context).textTheme.labelMedium),
-                      const SizedBox(height: AppSpace.md),
-                      Row(children: [
-                        Expanded(
-                            child: _Metric(
-                                label: 'Income',
-                                value: _money(finance['totalIncome']))),
-                        Expanded(
-                            child: _Metric(
-                                label: 'Spent',
-                                value: _money(finance['totalExpense']))),
-                      ]),
-                      const SizedBox(height: AppSpace.md),
-                      ClipRRect(
-                          borderRadius: BorderRadius.circular(6),
-                          child: const LinearProgressIndicator(
-                              value: .68,
-                              minHeight: 6,
-                              backgroundColor: AppColors.line)),
-                    ])),
+                          Text('This month',
+                              style: Theme.of(context).textTheme.titleMedium),
+                          const SizedBox(height: AppSpace.xs),
+                          Row(children: [
+                            Expanded(
+                                child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                  Text(_money(finance['netBalance']),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .headlineLarge),
+                                  Text('Net balance',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelMedium),
+                                ])),
+                            Expanded(
+                                child: TrendLine(values: [
+                              double.tryParse(
+                                      finance['totalIncome']?.toString() ??
+                                          '') ??
+                                  0,
+                              double.tryParse(
+                                      finance['netBalance']?.toString() ??
+                                          '') ??
+                                  0,
+                              double.tryParse(
+                                      finance['totalExpense']?.toString() ??
+                                          '') ??
+                                  0,
+                            ], height: 36)),
+                          ]),
+                          const Divider(height: 16),
+                          Row(children: [
+                            Expanded(
+                                child: _Metric(
+                                    label: 'Income',
+                                    value: _money(finance['totalIncome']))),
+                            Expanded(
+                                child: _Metric(
+                                    label: 'Spent',
+                                    value: _money(finance['totalExpense']))),
+                          ]),
+                        ])),
                 const SizedBox(height: AppSpace.md),
                 Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Expanded(
@@ -198,7 +249,7 @@ class _HomeScreenState extends State<HomeScreen>
                           child:
                               _GoldSnapshot(price: firstPrice, money: _money))),
                 ]),
-                const SizedBox(height: AppSpace.lg),
+                const SizedBox(height: AppSpace.md),
                 const SectionHeader(title: 'Quick actions'),
                 const SizedBox(height: AppSpace.sm),
                 Row(

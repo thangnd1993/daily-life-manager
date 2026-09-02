@@ -107,7 +107,24 @@ class _TrendPainter extends CustomPainter {
   final Color color;
   @override
   void paint(Canvas canvas, Size size) {
-    if (values.length < 2) return;
+    if (values.isEmpty) {
+      final baseline = Paint()
+        ..color = AppColors.line
+        ..strokeWidth = 1;
+      canvas.drawLine(Offset(0, size.height * .65),
+          Offset(size.width, size.height * .65), baseline);
+      return;
+    }
+    if (values.length == 1) {
+      final stroke = Paint()
+        ..color = color.withValues(alpha: .7)
+        ..strokeWidth = 2
+        ..strokeCap = StrokeCap.round;
+      canvas.drawLine(Offset(0, size.height * .6),
+          Offset(size.width, size.height * .6), stroke);
+      canvas.drawCircle(Offset(size.width, size.height * .6), 3, stroke);
+      return;
+    }
     final minValue = values.reduce((a, b) => a < b ? a : b);
     final maxValue = values.reduce((a, b) => a > b ? a : b);
     final range = maxValue == minValue ? 1 : maxValue - minValue;
@@ -401,7 +418,7 @@ class AuthLayout extends StatelessWidget {
                 child: SingleChildScrollView(
           padding: EdgeInsets.fromLTRB(
               AppSpace.page,
-              AppSpace.xl,
+              AppSpace.md,
               AppSpace.page,
               MediaQuery.viewInsetsOf(context).bottom + AppSpace.lg),
           child:
@@ -409,29 +426,26 @@ class AuthLayout extends StatelessWidget {
             Align(
                 alignment: Alignment.center,
                 child: Container(
-                    width: 46,
-                    height: 46,
+                    width: 40,
+                    height: 40,
                     decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: .78),
                         borderRadius: BorderRadius.circular(15)),
                     child: const Icon(Icons.auto_awesome_rounded,
                         color: AppColors.accent))),
-            const SizedBox(height: AppSpace.xl),
+            const SizedBox(height: AppSpace.md),
             Text(title,
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.headlineLarge),
+                style: Theme.of(context).textTheme.headlineMedium),
             const SizedBox(height: AppSpace.sm),
             Text(subtitle,
                 textAlign: TextAlign.center,
                 style: Theme.of(context)
                     .textTheme
-                    .bodyLarge
+                    .bodyMedium
                     ?.copyWith(color: AppColors.secondary)),
-            const SizedBox(height: AppSpace.lg),
-            GlassSurface(
-                child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: children)),
+            const SizedBox(height: AppSpace.md),
+            ...children,
           ]),
         ))),
       );

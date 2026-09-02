@@ -400,43 +400,68 @@ class _FinanceScreenState extends State<FinanceScreen> {
     await _load();
   }
 
-  List<Map<String, dynamic>> get _expenseBreakdown =>
-      (analytics['expenseByCategory'] as List<dynamic>? ?? const [])
-          .cast<Map<String, dynamic>>();
+  Future<void> _showBudgets() async {
+    await showModalBottomSheet<void>(
+        context: context,
+        builder: (context) => SheetFrame(
+            title: 'Budget overview',
+            child: budgets.isEmpty
+                ? const Text('No budget set for this month.')
+                : GroupedSurface(
+                    children: budgets
+                        .map((budget) => AppRow(
+                            title: (budget['category']
+                                        as Map<String, dynamic>?)?['name']
+                                    as String? ??
+                                'Overall expenses',
+                            subtitle:
+                                '${_money(budget['spentAmount'])} of ${_money(budget['amount'])}',
+                            trailing: PopupMenuButton<String>(
+                                onSelected: (action) {
+                                  Navigator.pop(context);
+                                  if (action == 'edit') _editBudget(budget);
+                                  if (action == 'delete') _deleteBudget(budget);
+                                },
+                                itemBuilder: (_) => const [
+                                      PopupMenuItem(
+                                          value: 'edit', child: Text('Edit')),
+                                      PopupMenuItem(
+                                          value: 'delete',
+                                          child: Text('Delete')),
+                                    ])))
+                        .toList())));
+  }
 
   List<Map<String, dynamic>> get _trend =>
       (analytics['trend'] as List<dynamic>? ?? const [])
           .cast<Map<String, dynamic>>();
 
-  double get _spendRatio {
-    final income =
-        double.tryParse(summary['totalIncome']?.toString() ?? '') ?? 0;
-    final expense =
-        double.tryParse(summary['totalExpense']?.toString() ?? '') ?? 0;
-    return income <= 0 ? 0 : (expense / income).clamp(0, 1);
-  }
-
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(automaticallyImplyLeading: false, toolbarHeight: 0),
-        floatingActionButton: FloatingActionButton.extended(
-            onPressed: categories.isEmpty ? null : () => _editTransaction(),
-            icon: const Icon(Icons.add),
-            label: const Text('Add')),
+        floatingActionButton: Padding(
+            padding: const EdgeInsets.only(bottom: 76),
+            child: FloatingActionButton(
+                onPressed: categories.isEmpty ? null : () => _editTransaction(),
+                child: const Icon(Icons.add))),
         body: RefreshIndicator(
             onRefresh: _load,
             child: ListView(
                 padding: const EdgeInsets.fromLTRB(
                     AppSpace.page, 20, AppSpace.page, 120),
                 children: [
-                  PageHeader(
-                      eyebrow: 'Personal finance',
-                      title: 'Finance',
-                      trailing: IconButton(
-                          onPressed: _manageCategories,
-                          tooltip: 'Categories',
-                          icon: const Icon(Icons.tune_rounded))),
-                  const SizedBox(height: AppSpace.lg),
+                  Row(children: [
+                    const Icon(Icons.arrow_back_ios_new_rounded, size: 17),
+                    const SizedBox(width: 20),
+                    Expanded(
+                        child: Text('Finance',
+                            style: Theme.of(context).textTheme.titleLarge)),
+                    IconButton(
+                        onPressed: _manageCategories,
+                        tooltip: 'Categories',
+                        icon: const Icon(Icons.tune_rounded))
+                  ]),
+                  const SizedBox(height: AppSpace.xs),
                   Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -461,146 +486,86 @@ class _FinanceScreenState extends State<FinanceScreen> {
                         onRetry: _load),
                   if (!loading && error == null) ...[
                     GlassSurface(
+                        padding: const EdgeInsets.all(16),
                         child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                          Text('NET BALANCE',
-                              style: Theme.of(context).textTheme.labelMedium),
-                          const SizedBox(height: 6),
-                          Text(_money(summary['netBalance']),
-                              style: Theme.of(context).textTheme.displaySmall),
-                          const SizedBox(height: AppSpace.sm),
-                          TrendLine(
-                              values: _trend
-                                  .map((item) =>
-                                      double.tryParse(
-                                          item['netBalance']?.toString() ??
-                                              '') ??
-                                      0)
-                                  .toList(),
-                              height: 54),
-                          const SizedBox(height: AppSpace.lg),
-                          Row(children: [
-                            Expanded(
-                                child: _SummaryMetric(
-                                    label: 'Income',
-                                    value: _money(summary['totalIncome']))),
-                            Expanded(
-                                child: _SummaryMetric(
-                                    label: 'Expense',
-                                    value: _money(summary['totalExpense'])))
-                          ]),
-                          const SizedBox(height: AppSpace.md),
-                          ClipRRect(
-                              borderRadius: BorderRadius.circular(4),
-                              child: LinearProgressIndicator(
-                                  value: _spendRatio,
-                                  minHeight: 6,
-                                  backgroundColor: AppColors.line)),
-                        ])),
-                    const SizedBox(height: AppSpace.xl),
-                    Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('Budgets',
-                              style: Theme.of(context).textTheme.titleLarge),
-                          TextButton.icon(
-                              onPressed: () => _editBudget(),
-                              icon: const Icon(Icons.add),
-                              label: const Text('Set budget'))
-                        ]),
-                    if (budgets.isEmpty)
-                      const Text('No budgets set for this month.'),
-                    ...budgets.map((budget) => Padding(
-                        padding: const EdgeInsets.only(bottom: AppSpace.md),
-                        child: DecoratedBox(
-                            decoration: const BoxDecoration(
-                                border: Border(
-                                    bottom: BorderSide(color: AppColors.line))),
-                            child: Padding(
-                                padding: const EdgeInsets.all(16),
-                                child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Row(children: [
-                                        Expanded(
-                                            child: Text(
-                                                (budget['category'] as Map<
-                                                            String,
-                                                            dynamic>?)?['name']
-                                                        as String? ??
-                                                    'Overall expenses',
-                                                style: const TextStyle(
-                                                    fontWeight:
-                                                        FontWeight.bold))),
-                                        IconButton(
-                                            onPressed: () =>
-                                                _editBudget(budget),
-                                            icon: const Icon(
-                                                Icons.edit_outlined)),
-                                        IconButton(
-                                            onPressed: () =>
-                                                _deleteBudget(budget),
-                                            icon: const Icon(
-                                                Icons.delete_outline))
-                                      ]),
-                                      Text(
-                                          '${_money(budget['spentAmount'])} of ${_money(budget['amount'])}'),
-                                      const SizedBox(height: 8),
-                                      LinearProgressIndicator(
-                                          value:
-                                              ((budget['percentageUsed'] as num)
-                                                          .toDouble() /
-                                                      100)
-                                                  .clamp(0, 1)
-                                                  .toDouble(),
-                                          color: budget['exceeded'] == true
-                                              ? Colors.red
-                                              : Colors.blue),
-                                      const SizedBox(height: 6),
-                                      Text(budget['exceeded'] == true
-                                          ? 'Budget exceeded by ${_money((BigInt.parse(budget['remainingAmount'] as String).abs()).toString())}'
-                                          : '${_money(budget['remainingAmount'])} remaining'),
-                                    ]))))),
-                    const SizedBox(height: 24),
-                    Text('Expense breakdown',
-                        style: Theme.of(context).textTheme.titleLarge),
-                    ..._expenseBreakdown.map((item) => Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 6),
-                        child: Column(children: [
-                          Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text((item['category']
-                                    as Map<String, dynamic>)['name'] as String),
-                                Text(
-                                    '${item['percentage']}% · ${_money(item['amount'])}')
+                              Text('Net balance',
+                                  style:
+                                      Theme.of(context).textTheme.labelMedium),
+                              const SizedBox(height: 4),
+                              Row(children: [
+                                Expanded(
+                                    child: Text(_money(summary['netBalance']),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .headlineLarge)),
+                                Expanded(
+                                    child: TrendLine(
+                                        values: _trend
+                                            .map((item) =>
+                                                double.tryParse(
+                                                    item['netBalance']
+                                                            ?.toString() ??
+                                                        '') ??
+                                                0)
+                                            .toList(),
+                                        height: 42)),
                               ]),
-                          const SizedBox(height: 4),
-                          LinearProgressIndicator(
-                              value:
-                                  (item['percentage'] as num).toDouble() / 100)
-                        ]))),
-                    const SizedBox(height: 24),
-                    Text('Six-month trend',
-                        style: Theme.of(context).textTheme.titleLarge),
-                    GroupedSurface(
-                        children: _trend
-                            .map((point) => AppRow(
-                                title: '${point['month']}/${point['year']}',
-                                subtitle:
-                                    'Income ${_money(point['totalIncome'])}',
-                                trailing: Text(
-                                    'Expense ${_money(point['totalExpense'])}')))
-                            .toList()),
-                    const SizedBox(height: 24),
-                    Text('Transactions',
-                        style: Theme.of(context).textTheme.titleLarge),
+                              const Divider(height: 14),
+                              Row(children: [
+                                Expanded(
+                                    child: _SummaryMetric(
+                                        label: 'Income',
+                                        value: _money(summary['totalIncome']))),
+                                Expanded(
+                                    child: _SummaryMetric(
+                                        label: 'Expense',
+                                        value: _money(summary['totalExpense'])))
+                              ]),
+                            ])),
+                    const SizedBox(height: AppSpace.sm),
+                    GlassSurface(
+                        onTap: _showBudgets,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 10),
+                        child: Row(children: [
+                          Expanded(
+                              child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                Text('Budget overview',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium),
+                                Text(
+                                    budgets.isEmpty
+                                        ? 'No budget set'
+                                        : '${budgets.length} active',
+                                    style: const TextStyle(
+                                        fontSize: 11,
+                                        color: AppColors.secondary)),
+                              ])),
+                          TextButton(
+                              onPressed: () => _editBudget(),
+                              child: const Text('Set budget'))
+                        ])),
+                    const SizedBox(height: AppSpace.md),
+                    SectionHeader(
+                        title: 'Recent transactions',
+                        action: 'View all',
+                        onAction: _manageCategories),
                     if (transactions.isEmpty)
-                      const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 24),
-                          child: Text('No transactions for this month.')),
+                      const GlassSurface(
+                          padding: EdgeInsets.symmetric(vertical: 28),
+                          child: Column(children: [
+                            Icon(Icons.description_outlined,
+                                color: AppColors.tertiary, size: 32),
+                            SizedBox(height: 8),
+                            Text('No transactions yet',
+                                style: TextStyle(
+                                    fontSize: 11, color: AppColors.secondary)),
+                          ])),
                     if (transactions.isNotEmpty)
                       GroupedSurface(
                           children: transactions.map((transaction) {

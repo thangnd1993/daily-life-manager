@@ -29,15 +29,16 @@ class AppShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Scaffold(
         extendBody: true,
-        body: AppBackground(child: navigationShell),
+        body: AppBackground(
+            child: SafeArea(bottom: false, child: navigationShell)),
         bottomNavigationBar: SafeArea(
-          minimum: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+          minimum: const EdgeInsets.fromLTRB(16, 0, 16, 10),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(28),
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
               child: Container(
-                height: 60,
+                height: 58,
                 decoration: BoxDecoration(
                   color: AppColors.glass.withValues(alpha: .78),
                   borderRadius: BorderRadius.circular(28),
@@ -64,39 +65,42 @@ class AppShell extends StatelessWidget {
                       child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            AnimatedContainer(
-                              duration: const Duration(milliseconds: 180),
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 14, vertical: 5),
-                              decoration: index == 2
-                                  ? const BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      gradient: SweepGradient(colors: [
-                                        Color(0xffffbd2e),
-                                        Color(0xffff3b57),
-                                        Color(0xffac48ff),
-                                        Color(0xff24b7ff),
-                                        Color(0xffffbd2e)
-                                      ]),
-                                      boxShadow: [
-                                          BoxShadow(
-                                              color: Color(0x44246bfd),
-                                              blurRadius: 12)
-                                        ])
-                                  : BoxDecoration(
-                                      color: selected
-                                          ? AppColors.accentSoft
-                                          : Colors.transparent,
-                                      borderRadius: BorderRadius.circular(12)),
-                              child: Icon(selected ? item.$3 : item.$2,
-                                  size: index == 2 ? 23 : 21,
-                                  color: index == 2
-                                      ? Colors.white
-                                      : selected
-                                          ? AppColors.accent
-                                          : AppColors.secondary),
-                            ),
-                            const SizedBox(height: 1),
+                            Transform.translate(
+                                offset: Offset(0, index == 2 ? -7 : 0),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 180),
+                                  width: index == 2 ? 44 : 32,
+                                  height: index == 2 ? 44 : 30,
+                                  alignment: Alignment.center,
+                                  decoration: index == 2
+                                      ? const BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          gradient: SweepGradient(colors: [
+                                            Color(0xffffbd2e),
+                                            Color(0xffff3b57),
+                                            Color(0xffac48ff),
+                                            Color(0xff24b7ff),
+                                            Color(0xffffbd2e)
+                                          ]),
+                                          boxShadow: [
+                                              BoxShadow(
+                                                  color: Color(0x44246bfd),
+                                                  blurRadius: 12)
+                                            ])
+                                      : BoxDecoration(
+                                          color: selected
+                                              ? AppColors.accentSoft
+                                              : Colors.transparent,
+                                          shape: BoxShape.circle),
+                                  child: Icon(selected ? item.$3 : item.$2,
+                                      size: index == 2 ? 23 : 21,
+                                      color: index == 2
+                                          ? Colors.white
+                                          : selected
+                                              ? AppColors.accent
+                                              : AppColors.secondary),
+                                )),
+                            SizedBox(height: index == 2 ? 0 : 1),
                             Text(item.$4,
                                 maxLines: 1,
                                 style: TextStyle(

@@ -124,8 +124,13 @@ class _AttendanceScreenState extends State<AttendanceScreen>
               padding: const EdgeInsets.fromLTRB(
                   AppSpace.page, 20, AppSpace.page, 120),
               children: [
-                const PageHeader(eyebrow: 'Daily rhythm', title: 'Attendance'),
-                const SizedBox(height: AppSpace.xl),
+                Row(children: [
+                  const Icon(Icons.arrow_back_ios_new_rounded, size: 17),
+                  const SizedBox(width: 20),
+                  Text('Attendance',
+                      style: Theme.of(context).textTheme.titleLarge),
+                ]),
+                const SizedBox(height: AppSpace.md),
                 if (loading)
                   const Center(
                       child: Padding(
@@ -139,56 +144,72 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                       onRetry: _load)
                 else
                   GlassSurface(
+                    padding: const EdgeInsets.all(18),
                     child: AnimatedSwitcher(
                         duration: const Duration(milliseconds: 260),
                         child: Column(
                             key: ValueKey(checkedIn),
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Row(children: [
-                                Expanded(
-                                    child: Text(time,
+                              Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Expanded(
+                                        child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                          Text(time,
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .headlineLarge),
+                                          const SizedBox(height: 3),
+                                          Text('${_shortDate(now)} ${now.year}',
+                                              style: const TextStyle(
+                                                  fontSize: 12,
+                                                  color: AppColors.secondary)),
+                                        ])),
+                                    Container(
+                                        width: 64,
+                                        height: 64,
+                                        decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: AppColors.accent,
+                                            border: Border.all(
+                                                color: const Color(0x88ffffff),
+                                                width: 8),
+                                            boxShadow: const [
+                                              BoxShadow(
+                                                  color: Color(0x44246bfd),
+                                                  blurRadius: 20)
+                                            ]),
+                                        child: Icon(
+                                            checkedIn
+                                                ? Icons.check_rounded
+                                                : Icons.fingerprint_rounded,
+                                            color: Colors.white,
+                                            size: 26)),
+                                  ]),
+                              const SizedBox(height: AppSpace.sm),
+                              Align(
+                                  alignment: Alignment.centerRight,
+                                  child: Column(children: [
+                                    Text(
+                                        checkedIn
+                                            ? 'You are all set'
+                                            : 'Ready for today?',
                                         style: Theme.of(context)
                                             .textTheme
-                                            .displaySmall)),
-                                Container(
-                                    width: 52,
-                                    height: 52,
-                                    decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color: checkedIn
-                                            ? AppColors.accent
-                                            : AppColors.ink),
-                                    child: Icon(
+                                            .titleMedium),
+                                    Text(
                                         checkedIn
-                                            ? Icons.check_rounded
-                                            : Icons.fingerprint_rounded,
-                                        color: Colors.white,
-                                        size: 27)),
-                              ]),
-                              const SizedBox(height: AppSpace.xs),
-                              Text(_shortDate(now),
-                                  style: const TextStyle(
-                                      color: AppColors.secondary)),
-                              const SizedBox(height: AppSpace.lg),
-                              StatusMark(
-                                  label: checkedIn
-                                      ? 'Checked in today'
-                                      : 'Not checked in yet',
-                                  positive: checkedIn),
-                              const SizedBox(height: AppSpace.md),
-                              Text(
-                                  checkedIn
-                                      ? 'You are all set'
-                                      : 'Ready for today?',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .headlineSmall),
-                              const SizedBox(height: AppSpace.xs),
-                              Text(checkedIn
-                                  ? 'Checked in at ${_friendlyCheckInTime()}.'
-                                  : 'One tap records attendance using ${AppConfig.timezone}.'),
-                              const SizedBox(height: AppSpace.lg),
+                                            ? 'Checked in at ${_friendlyCheckInTime()}'
+                                            : 'Check in with one tap',
+                                        style: const TextStyle(
+                                            fontSize: 11,
+                                            color: AppColors.secondary)),
+                                  ])),
+                              const SizedBox(height: AppSpace.sm),
                               if (!checkedIn)
                                 SizedBox(
                                     width: double.infinity,
@@ -198,19 +219,27 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                             Icons.touch_app_outlined),
                                         label: const Text('Check in now')))
                               else
-                                Row(children: [
-                                  const Icon(Icons.verified_rounded,
-                                      color: AppColors.accent, size: 19),
-                                  const SizedBox(width: 8),
-                                  Text('Complete',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .titleMedium
-                                          ?.copyWith(color: AppColors.accent))
-                                ]),
+                                Container(
+                                    height: 40,
+                                    decoration: BoxDecoration(
+                                        border:
+                                            Border.all(color: AppColors.line),
+                                        borderRadius:
+                                            BorderRadius.circular(14)),
+                                    child: const Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Icon(Icons.verified_rounded,
+                                              color: AppColors.secondary,
+                                              size: 16),
+                                          SizedBox(width: 8),
+                                          Text('Completed',
+                                              style: TextStyle(fontSize: 12)),
+                                        ])),
                             ])),
                   ),
-                const SizedBox(height: AppSpace.xl),
+                const SizedBox(height: AppSpace.md),
                 const SectionHeader(title: 'This month'),
                 const SizedBox(height: AppSpace.sm),
                 if (!loading && error == null)
@@ -227,14 +256,16 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                     ]),
                   ),
                 if (!loading && error == null)
-                  const SizedBox(height: AppSpace.lg),
+                  const SizedBox(height: AppSpace.md),
                 const SectionHeader(title: 'Recent check-ins'),
                 const SizedBox(height: AppSpace.sm),
                 if (!loading && error == null && records.isEmpty)
-                  const AppStateCard(
-                      icon: Icons.calendar_month_outlined,
-                      title: 'No earlier check-ins',
-                      message: 'Your attendance history will appear here.')
+                  const GlassSurface(
+                      padding: EdgeInsets.symmetric(vertical: 20),
+                      child: Center(
+                          child: Text('No check-ins yet',
+                              style: TextStyle(
+                                  fontSize: 12, color: AppColors.secondary))))
                 else
                   GroupedSurface(
                       children: records

@@ -70,8 +70,8 @@ void main() {
     await tester.pump();
     await tester.tap(find.text('Attendance'));
     await tester.pumpAndSettle();
-    expect(find.text('Checked in today'), findsOneWidget);
-    expect(find.text('Complete'), findsOneWidget);
+    expect(find.text('You are all set'), findsOneWidget);
+    expect(find.text('Completed'), findsOneWidget);
     expect(find.text('This month'), findsOneWidget);
     expect(find.text('29 Aug 2026'), findsOneWidget);
   });
@@ -177,16 +177,8 @@ void main() {
     await tester.tap(find.text('Finance'));
     await tester.pumpAndSettle();
     expect(find.text('1.000.000 ₫'), findsOneWidget);
-    expect(find.text('Overall expenses'), findsOneWidget);
-    await tester.scrollUntilVisible(find.text('Expense breakdown'), 250);
-    expect(find.text('Expense breakdown'), findsOneWidget);
-    await tester.drag(find.byType(Scrollable).last, const Offset(0, -180));
-    await tester.pumpAndSettle();
-    expect(find.text('Food'), findsWidgets);
-    await tester.scrollUntilVisible(find.text('Six-month trend'), 250);
-    expect(find.text('Six-month trend'), findsOneWidget);
-    await tester.scrollUntilVisible(find.text('Transactions'), 250);
-    expect(find.text('Transactions'), findsOneWidget);
+    expect(find.text('Budget overview'), findsOneWidget);
+    expect(find.text('Recent transactions'), findsOneWidget);
     expect(find.text('Food'), findsWidgets);
   });
 

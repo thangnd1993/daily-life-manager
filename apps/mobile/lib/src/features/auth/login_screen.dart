@@ -70,16 +70,23 @@ class _LoginScreenState extends State<LoginScreen> {
             const SizedBox(height: AppSpace.sm),
             Text(error!, style: const TextStyle(color: AppColors.danger))
           ],
-          const SizedBox(height: AppSpace.lg),
+          const SizedBox(height: AppSpace.xs),
+          Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                  onPressed: () => context.go('/forgot-password'),
+                  child: const Text('Forgot password?'))),
+          const SizedBox(height: AppSpace.xs),
           FilledButton(
               onPressed: busy ? null : submit, child: const Text('Sign in')),
-          const SizedBox(height: AppSpace.sm),
-          TextButton(
-              onPressed: () => context.go('/register'),
-              child: const Text('Create account')),
-          TextButton(
-              onPressed: () => context.go('/forgot-password'),
-              child: const Text('Forgot password?')),
+          const SizedBox(height: AppSpace.lg),
+          Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+            const Text("Don't have an account?",
+                style: TextStyle(color: AppColors.secondary)),
+            TextButton(
+                onPressed: () => context.go('/register'),
+                child: const Text('Create account')),
+          ]),
           TextButton(
               onPressed: () => context.go('/reset-password'),
               child: const Text('Have a reset token?')),
