@@ -103,8 +103,12 @@ void main() {
     expect((await api.attendanceToday('Asia/Ho_Chi_Minh'))['checkedIn'], false);
     expect((await api.checkIn('Asia/Ho_Chi_Minh'))['id'], 'attendance-1');
     expect((await api.attendanceMonth(2026, 8))['checkedInDays'], 0);
+    await api.updateAttendanceDay('2026-08-01', 360, 'Asia/Ho_Chi_Minh');
     expect(requests.first.url.queryParameters['timezone'], 'Asia/Ho_Chi_Minh');
     expect(jsonDecode(requests[1].body)['timezone'], 'Asia/Ho_Chi_Minh');
+    expect(requests.last.method, 'PUT');
+    expect(requests.last.url.path, '/api/attendance/2026-08-01');
+    expect(jsonDecode(requests.last.body)['workedMinutes'], 360);
   });
 
   test('maps finance summary, categories, transaction CRUD, and BigInt strings',

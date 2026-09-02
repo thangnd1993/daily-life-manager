@@ -50,7 +50,7 @@ class ApiClient {
   Future<Map<String, dynamic>> updateAttendanceDay(
           String date, int workedMinutes, String timezone,
           {String? offReason}) async =>
-      await request('PATCH', 'attendance/$date', body: {
+      await request('PUT', 'attendance/$date', body: {
         'workedMinutes': workedMinutes,
         'timezone': timezone,
         if (offReason != null) 'offReason': offReason,

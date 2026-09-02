@@ -253,6 +253,18 @@ describe('critical application journeys (e2e)', () => {
       200, 401,
     ]);
 
+    const historicalWrites = await Promise.all([
+      request(app.getHttpServer())
+        .put('/api/attendance/2001-09-01')
+        .set('Authorization', bearer(member.accessToken))
+        .send({ workedMinutes: 360, timezone: 'UTC' }),
+      request(app.getHttpServer())
+        .put('/api/attendance/2001-09-01')
+        .set('Authorization', bearer(member.accessToken))
+        .send({ workedMinutes: 360, timezone: 'UTC' }),
+    ]);
+    expect(historicalWrites.map((result) => result.status)).toEqual([200, 200]);
+
     const checkIns = await Promise.all([
       request(app.getHttpServer())
         .post('/api/attendance/check-in')
@@ -266,7 +278,19 @@ describe('critical application journeys (e2e)', () => {
     expect(checkIns.map((result) => result.status).sort()).toEqual([201, 409]);
     expect(
       await prisma.attendance.count({ where: { userId: member.user.id } }),
-    ).toBe(1);
+    ).toBe(2);
+    const historicalRecords = await prisma.attendance.findMany({
+      where: {
+        userId: member.user.id,
+        attendanceDate: new Date('2001-09-01T00:00:00.000Z'),
+      },
+    });
+    expect(historicalRecords).toHaveLength(1);
+    expect(historicalRecords[0]).toMatchObject({
+      workedMinutes: 360,
+      status: 'WORKED',
+      source: 'MOBILE',
+    });
   });
 
   it('persists one Gold Alert trigger and one notification across repeated evaluation', async () => {

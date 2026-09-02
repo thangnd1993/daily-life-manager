@@ -33,6 +33,22 @@ void main() {
 
   testWidgets('renders attendance loading and checked-in state',
       (tester) async {
+    final now = DateTime.now();
+    final month = now.month.toString().padLeft(2, '0');
+    const monthNames = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
     final api = ApiClient(
       tokenStore: MemoryTokenStore(),
       client: MockClient(
@@ -46,7 +62,8 @@ void main() {
                 : {
                     'items': [
                       {
-                        'attendanceDate': '2026-08-29',
+                        'attendanceDate': '${now.year}-$month-01',
+                        'workedMinutes': 240,
                         'timezone': 'Asia/Ho_Chi_Minh',
                         'source': 'MOBILE',
                       },
@@ -72,7 +89,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('THIS MONTH'), findsOneWidget);
     expect(find.text('4 h'), findsWidgets);
-    expect(find.text('29 Aug 2026'), findsOneWidget);
+    expect(find.text('01 ${monthNames[now.month - 1]} ${now.year}'),
+        findsOneWidget);
+    expect(find.textContaining('No record'), findsWidgets);
   });
 
   testWidgets('opens finance overview with string VND totals and transactions',

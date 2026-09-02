@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
@@ -174,8 +175,127 @@ describe('AttendanceService', () => {
           status: 'OFF',
           offReason: 'Sick leave',
         }),
+        create: expect.objectContaining({
+          workedMinutes: 0,
+          status: 'OFF',
+          offReason: 'Sick leave',
+          source: 'MOBILE',
+        }),
       }),
     );
+  });
+
+  it('allows the current configured local calendar date', async () => {
+    const timezone = 'Asia/Ho_Chi_Minh';
+    prisma.attendance.upsert.mockResolvedValue({ id: 'today-1' });
+    const today = service.localDate(timezone).toISOString().slice(0, 10);
+    await expect(
+      service.updateDay('owner-1', today, {
+        workedMinutes: 240,
+        timezone: 'America/New_York',
+      }),
+    ).resolves.toEqual({ id: 'today-1' });
+  });
+
+  it('creates a missing historical worked record with owner-scoped upsert semantics', async () => {
+    prisma.attendance.upsert.mockResolvedValue({
+      id: 'manual-1',
+      source: 'MOBILE',
+      workedMinutes: 360,
+    });
+    await expect(
+      service.updateDay('owner-1', '2026-01-15', {
+        workedMinutes: 360,
+        timezone: 'America/New_York',
+      }),
+    ).resolves.toMatchObject({ workedMinutes: 360, source: 'MOBILE' });
+    expect(prisma.attendance.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          userId_attendanceDate: {
+            userId: 'owner-1',
+            attendanceDate: new Date('2026-01-15T00:00:00.000Z'),
+          },
+        },
+        create: expect.objectContaining({
+          userId: 'owner-1',
+          workedMinutes: 360,
+          source: 'MOBILE',
+          timezone: 'Asia/Ho_Chi_Minh',
+        }),
+      }),
+    );
+  });
+
+  it('edits an existing automatic record as a manual user update', async () => {
+    prisma.attendance.upsert.mockResolvedValue({
+      id: 'auto-1',
+      source: 'MOBILE',
+      workedMinutes: 450,
+      autoRecordedAt: new Date('2026-01-15T01:00:00Z'),
+    });
+    await service.updateDay('owner-1', '2026-01-15', {
+      workedMinutes: 450,
+      timezone: 'UTC',
+    });
+    expect(prisma.attendance.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        update: expect.objectContaining({
+          workedMinutes: 450,
+          source: 'MOBILE',
+        }),
+      }),
+    );
+  });
+
+  it('rejects malformed, impossible, and future calendar dates', async () => {
+    await expect(
+      service.updateDay('owner-1', '2026/01/15', {
+        workedMinutes: 240,
+        timezone: 'UTC',
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    await expect(
+      service.updateDay('owner-1', '2026-02-30', {
+        workedMinutes: 240,
+        timezone: 'UTC',
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    await expect(
+      service.updateDay('owner-1', '2100-01-01', {
+        workedMinutes: 240,
+        timezone: 'UTC',
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('permits historical editing during Leave Mode but blocks disabled Attendance', async () => {
+    prisma.user.findUnique.mockResolvedValueOnce({
+      attendanceEnabled: true,
+      leaveModeEnabled: true,
+      attendanceTimezone: 'UTC',
+      defaultDailyWorkMinutes: 240,
+    });
+    prisma.attendance.upsert.mockResolvedValue({ id: 'manual-1' });
+    await expect(
+      service.updateDay('owner-1', '2026-01-15', {
+        workedMinutes: 240,
+        timezone: 'UTC',
+      }),
+    ).resolves.toEqual({ id: 'manual-1' });
+
+    prisma.user.findUnique.mockResolvedValueOnce({
+      attendanceEnabled: false,
+      leaveModeEnabled: false,
+      attendanceTimezone: 'UTC',
+      defaultDailyWorkMinutes: 240,
+    });
+    await expect(
+      service.updateDay('owner-1', '2026-01-15', {
+        workedMinutes: 240,
+        timezone: 'UTC',
+      }),
+    ).rejects.toBeInstanceOf(ForbiddenException);
   });
 
   it('persists Leave Mode until the user explicitly disables it', async () => {

@@ -5,6 +5,7 @@ import {
   Param,
   Post,
   Patch,
+  Put,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -69,8 +70,23 @@ export class AttendanceController {
     return this.attendance.setLeaveMode(user.id, dto.enabled, dto.reason);
   }
 
-  @Patch(':date')
+  @Put(':date')
+  @ApiOperation({
+    summary: 'Create or update an owner-scoped attendance day',
+    description:
+      'Uses YYYY-MM-DD. Authenticated owners may upsert today or a past date in their configured attendance timezone; future dates are rejected.',
+  })
   updateDay(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('date') date: string,
+    @Body() dto: UpdateAttendanceDto,
+  ) {
+    return this.attendance.updateDay(user.id, date, dto);
+  }
+
+  @Patch(':date')
+  @ApiOperation({ summary: 'Legacy alias for owner-scoped attendance upsert' })
+  updateDayLegacy(
     @CurrentUser() user: AuthenticatedUser,
     @Param('date') date: string,
     @Body() dto: UpdateAttendanceDto,

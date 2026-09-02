@@ -111,13 +111,16 @@ export class AttendanceService {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date))
       throw new BadRequestException('Date must use YYYY-MM-DD');
     const attendanceDate = new Date(`${date}T00:00:00.000Z`);
-    if (Number.isNaN(attendanceDate.getTime()))
+    if (
+      Number.isNaN(attendanceDate.getTime()) ||
+      attendanceDate.toISOString().slice(0, 10) !== date
+    )
       throw new BadRequestException('Invalid date');
-    if (attendanceDate > this.localDate(dto.timezone))
-      throw new BadRequestException('Future attendance cannot be edited');
     const config = await this.config(userId);
     if (!config.attendanceEnabled)
       throw new ForbiddenException('Attendance is disabled');
+    if (attendanceDate > this.localDate(config.attendanceTimezone))
+      throw new BadRequestException('Future attendance cannot be edited');
     const reason = dto.offReason?.trim() || null;
     if (dto.workedMinutes === 0 && !reason)
       throw new BadRequestException('An OFF reason is required');
@@ -130,7 +133,7 @@ export class AttendanceService {
         status,
         offReason: status === AttendanceStatus.OFF ? reason : null,
         source: AttendanceSource.MOBILE,
-        timezone: dto.timezone,
+        timezone: config.attendanceTimezone,
       },
       create: {
         userId,
@@ -139,7 +142,7 @@ export class AttendanceService {
         status,
         offReason: status === AttendanceStatus.OFF ? reason : null,
         source: AttendanceSource.MOBILE,
-        timezone: dto.timezone,
+        timezone: config.attendanceTimezone,
         checkedInAt: new Date(),
       },
     });

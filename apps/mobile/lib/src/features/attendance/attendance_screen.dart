@@ -18,6 +18,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   Map<String, dynamic>? today;
   List<Map<String, dynamic>> records = const [];
   int workedDays = 0, totalMinutes = 0, offDays = 0;
+  DateTime displayedMonth = DateTime(DateTime.now().year, DateTime.now().month);
   @override
   bool get wantKeepAlive => true;
 
@@ -35,10 +36,9 @@ class _AttendanceScreenState extends State<AttendanceScreen>
       });
     }
     try {
-      final now = DateTime.now();
       final data = await Future.wait([
         widget.api.attendanceToday(AppConfig.timezone),
-        widget.api.attendanceMonth(now.year, now.month)
+        widget.api.attendanceMonth(displayedMonth.year, displayedMonth.month)
       ]);
       final current = data[0], month = data[1];
       if (!mounted) {
@@ -124,14 +124,46 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     await _load();
   }
 
-  Future<void> _edit([Map<String, dynamic>? record]) async {
+  Future<void> _changeMonth(int delta) async {
+    final candidate =
+        DateTime(displayedMonth.year, displayedMonth.month + delta);
+    final current = DateTime(DateTime.now().year, DateTime.now().month);
+    if (candidate.isAfter(current)) return;
+    setState(() => displayedMonth = candidate);
+    await _load();
+  }
+
+  Map<String, dynamic>? _recordFor(DateTime date) {
+    final key = _dateKey(date);
+    for (final record in records) {
+      if (record['attendanceDate']?.toString().startsWith(key) == true) {
+        return record;
+      }
+    }
+    return null;
+  }
+
+  String _dateKey(DateTime date) =>
+      '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+
+  List<DateTime> get _elapsedDates {
+    final now = DateTime.now();
+    final lastDay =
+        displayedMonth.year == now.year && displayedMonth.month == now.month
+            ? now.day
+            : DateTime(displayedMonth.year, displayedMonth.month + 1, 0).day;
+    return List.generate(
+        lastDay,
+        (index) =>
+            DateTime(displayedMonth.year, displayedMonth.month, index + 1))
+      ..sort((a, b) => b.compareTo(a));
+  }
+
+  Future<void> _edit(DateTime date, [Map<String, dynamic>? record]) async {
     final initial = record?['workedMinutes'] as int? ?? 240;
     var isOff = initial == 0, hours = initial ~/ 60, minutes = initial % 60;
     final reason =
         TextEditingController(text: record?['offReason'] as String? ?? '');
-    final date = DateTime.tryParse(record?['attendanceDate']?.toString() ?? '')
-            ?.toLocal() ??
-        DateTime.now();
     final saved = await showModalBottomSheet<bool>(
         context: context,
         isScrollControlled: true,
@@ -193,13 +225,15 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                           child: const Text('Save work record')),
                     ]))));
     if (saved == true) {
-      final key =
-          '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+      final key = _dateKey(date);
       await widget.api.updateAttendanceDay(
           key, isOff ? 0 : hours * 60 + minutes, AppConfig.timezone,
           offReason: isOff ? reason.text.trim() : null);
       await _load();
     }
+    // Let the modal route finish its dismissal animation before releasing the
+    // controller used by its outgoing TextField.
+    await Future<void>.delayed(const Duration(milliseconds: 350));
     reason.dispose();
   }
 
@@ -294,10 +328,10 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                   SectionHeader(
                       title: 'Today',
                       action: 'Edit',
-                      onAction: () => _edit(today)),
+                      onAction: () => _edit(DateTime.now(), today)),
                   GlassSurface(
                       padding: const EdgeInsets.all(16),
-                      onTap: () => _edit(today),
+                      onTap: () => _edit(DateTime.now(), today),
                       child: Row(children: [
                         CircleAvatar(
                             radius: 25,
@@ -334,43 +368,81 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                         const Icon(Icons.chevron_right_rounded),
                       ])),
                   const SizedBox(height: 18),
-                  const SectionHeader(title: 'Monthly history'),
+                  Row(children: [
+                    IconButton(
+                        tooltip: 'Previous month',
+                        onPressed: () => _changeMonth(-1),
+                        icon: const Icon(Icons.chevron_left_rounded)),
+                    Expanded(
+                        child: Text(
+                            '${_monthName(displayedMonth.month)} ${displayedMonth.year}',
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.titleMedium)),
+                    IconButton(
+                        tooltip: 'Next month',
+                        onPressed: DateTime(displayedMonth.year,
+                                    displayedMonth.month) ==
+                                DateTime(
+                                    DateTime.now().year, DateTime.now().month)
+                            ? null
+                            : () => _changeMonth(1),
+                        icon: const Icon(Icons.chevron_right_rounded)),
+                  ]),
+                  const SectionHeader(title: 'Monthly days'),
                   const SizedBox(height: 8),
-                  if (records.isEmpty)
-                    const GlassSurface(
-                        padding: EdgeInsets.all(24),
-                        child: Center(
-                            child: Text('No work records this month',
-                                style: TextStyle(color: AppColors.secondary))))
-                  else
-                    GroupedSurface(
-                        children: records.map((record) {
-                      final minutes = record['workedMinutes'] as int? ?? 240;
-                      return AppRow(
-                          leading: Icon(
-                              minutes > 0
-                                  ? Icons.check_circle_outline_rounded
-                                  : Icons.remove_circle_outline_rounded,
-                              color: minutes > 0
-                                  ? AppColors.success
-                                  : AppColors.warning),
-                          title: _date(record['attendanceDate']),
-                          subtitle: minutes > 0
-                              ? '${record['source'] == 'AUTO' ? 'Auto' : 'Edited'} · ${_duration(minutes)}'
-                              : 'Off · ${record['offReason'] ?? 'Reason unavailable'}',
-                          trailing: Text(_duration(minutes),
-                              style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  color: minutes > 0
-                                      ? AppColors.ink
-                                      : AppColors.warning)),
-                          onTap: () => _edit(record));
-                    }).toList()),
+                  GroupedSurface(
+                      children: _elapsedDates.map((date) {
+                    final record = _recordFor(date);
+                    final minutes = record?['workedMinutes'] as int? ?? 0;
+                    final hasRecord = record != null;
+                    return AppRow(
+                        leading: Icon(
+                            !hasRecord
+                                ? Icons.add_circle_outline_rounded
+                                : minutes > 0
+                                    ? Icons.check_circle_outline_rounded
+                                    : Icons.remove_circle_outline_rounded,
+                            color: !hasRecord
+                                ? AppColors.accent
+                                : minutes > 0
+                                    ? AppColors.success
+                                    : AppColors.warning),
+                        title: _date(date.toIso8601String()),
+                        subtitle: !hasRecord
+                            ? 'No record · Add work record'
+                            : minutes > 0
+                                ? '${record['source'] == 'AUTO' ? 'Auto' : 'Edited'} · ${_duration(minutes)}'
+                                : 'Off · ${record['offReason'] ?? 'Reason unavailable'}',
+                        trailing: Text(hasRecord ? _duration(minutes) : 'Add',
+                            style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: !hasRecord
+                                    ? AppColors.accent
+                                    : minutes > 0
+                                        ? AppColors.ink
+                                        : AppColors.warning)),
+                        onTap: () => _edit(date, record));
+                  }).toList()),
                 ],
               ])),
     );
   }
 }
+
+String _monthName(int month) => const [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December'
+    ][month - 1];
 
 class _Total extends StatelessWidget {
   const _Total({required this.value, required this.label});
