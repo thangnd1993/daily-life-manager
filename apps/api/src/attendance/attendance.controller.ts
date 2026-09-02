@@ -4,6 +4,7 @@ import {
   Get,
   Param,
   Post,
+  Patch,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -18,7 +19,9 @@ import { AttendanceService } from './attendance.service';
 import {
   AttendanceHistoryQueryDto,
   CheckInDto,
+  LeaveModeDto,
   TimezoneQueryDto,
+  UpdateAttendanceDto,
 } from './dto/attendance.dto';
 
 @ApiTags('attendance')
@@ -56,6 +59,23 @@ export class AttendanceController {
     @Query() query: AttendanceHistoryQueryDto,
   ) {
     return this.attendance.history(user.id, query);
+  }
+
+  @Patch('leave-mode')
+  setLeaveMode(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: LeaveModeDto,
+  ) {
+    return this.attendance.setLeaveMode(user.id, dto.enabled, dto.reason);
+  }
+
+  @Patch(':date')
+  updateDay(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('date') date: string,
+    @Body() dto: UpdateAttendanceDto,
+  ) {
+    return this.attendance.updateDay(user.id, date, dto);
   }
 }
 

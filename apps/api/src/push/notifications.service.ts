@@ -40,4 +40,37 @@ export class NotificationsService {
     }
     return notification;
   }
+
+  async ensureAttendance(attendanceId: string) {
+    const record = await this.prisma.attendance.findUniqueOrThrow({
+      where: { id: attendanceId },
+    });
+    const hours = Math.floor(record.workedMinutes / 60);
+    const minutes = record.workedMinutes % 60;
+    const duration = `${hours} hour${hours === 1 ? '' : 's'}${minutes ? ` ${minutes} minutes` : ''}`;
+    const notification = await this.prisma.notification.upsert({
+      where: { attendanceId: record.id },
+      update: {},
+      create: {
+        userId: record.userId,
+        attendanceId: record.id,
+        type: NotificationType.ATTENDANCE_AUTO_RECORDED,
+        title: 'Daily attendance recorded',
+        body: `You've been automatically recorded for ${duration} today.`,
+        data: {
+          type: 'ATTENDANCE_AUTO_RECORDED',
+          route: '/attendance',
+          attendanceId: record.id,
+        },
+      },
+    });
+    try {
+      await this.jobs.enqueue(notification.id);
+    } catch (error) {
+      this.logger.warn(
+        `Notification ${notification.id} will remain pending: ${String(error)}`,
+      );
+    }
+    return notification;
+  }
 }

@@ -17,6 +17,9 @@ class _HomeScreenState extends State<HomeScreen>
   bool loading = true;
   String? error;
   bool checkedIn = false;
+  bool attendanceEnabled = false;
+  bool leaveMode = false;
+  Map<String, dynamic>? todayWork;
   Map<String, dynamic> finance = const {};
   List<Map<String, dynamic>> budgets = const [];
   List<Map<String, dynamic>> prices = const [];
@@ -47,7 +50,11 @@ class _HomeScreenState extends State<HomeScreen>
       ]);
       if (!mounted) return;
       setState(() {
-        checkedIn = (results[0] as Map<String, dynamic>)['checkedIn'] == true;
+        final attendance = results[0] as Map<String, dynamic>;
+        checkedIn = attendance['checkedIn'] == true;
+        attendanceEnabled = attendance['featureEnabled'] != false;
+        leaveMode = attendance['leaveModeEnabled'] == true;
+        todayWork = attendance['record'] as Map<String, dynamic>?;
         finance = results[1] as Map<String, dynamic>;
         budgets = results[2] as List<Map<String, dynamic>>;
         prices = results[3] as List<Map<String, dynamic>>;
@@ -83,6 +90,21 @@ class _HomeScreenState extends State<HomeScreen>
         'NOV',
         'DEC'
       ][month - 1];
+
+  String _todayWorkLabel() {
+    final minutes = todayWork?['workedMinutes'] as int?;
+    if (minutes == null) {
+      return checkedIn ? '4 h recorded' : 'No work recorded yet';
+    }
+    if (minutes == 0) {
+      return 'Off · ${todayWork?['offReason'] ?? 'Reason unavailable'}';
+    }
+    final hours = minutes ~/ 60;
+    final remainder = minutes % 60;
+    return remainder == 0
+        ? '$hours h recorded'
+        : '$hours h $remainder min recorded';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -165,15 +187,19 @@ class _HomeScreenState extends State<HomeScreen>
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                               StatusMark(
-                                  label: checkedIn
-                                      ? 'Checked in today'
-                                      : 'Attendance is waiting',
+                                  label: !attendanceEnabled
+                                      ? 'Attendance disabled'
+                                      : leaveMode
+                                          ? 'Leave Mode active'
+                                          : 'Today\'s work',
                                   positive: checkedIn),
                               const SizedBox(height: 4),
                               Text(
-                                  checkedIn
-                                      ? 'You are all set'
-                                      : 'Ready to check in',
+                                  !attendanceEnabled
+                                      ? 'Unavailable'
+                                      : leaveMode
+                                          ? 'Automatic tracking paused'
+                                          : _todayWorkLabel(),
                                   style:
                                       Theme.of(context).textTheme.titleMedium),
                             ])),

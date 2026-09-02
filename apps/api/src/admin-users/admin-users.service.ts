@@ -21,6 +21,10 @@ const safeUserSelect = {
   lastLoginAt: true,
   createdAt: true,
   updatedAt: true,
+  attendanceEnabled: true,
+  leaveModeEnabled: true,
+  attendanceTimezone: true,
+  defaultDailyWorkMinutes: true,
 } satisfies Prisma.UserSelect;
 
 @Injectable()
@@ -141,6 +145,46 @@ export class AdminUsersService {
       },
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
     );
+    return this.detail(id);
+  }
+
+  async updateAttendanceEnabled(
+    actor: AuthenticatedUser,
+    id: string,
+    enabled: boolean,
+    context?: AuditContext,
+  ): Promise<AdminUserDetail> {
+    await this.prisma.$transaction(async (transaction) => {
+      const target = await transaction.user.findUnique({ where: { id } });
+      if (!target) throw new NotFoundException('User not found');
+      await transaction.user.update({
+        where: { id },
+        data: {
+          attendanceEnabled: enabled,
+          ...(enabled
+            ? {}
+            : {
+                leaveModeEnabled: false,
+                leaveModeStartedAt: null,
+                leaveReason: null,
+              }),
+        },
+      });
+      await this.audit.record(
+        {
+          actorUserId: actor.id,
+          actorRole: actor.role,
+          action: enabled
+            ? 'ADMIN_ATTENDANCE_ENABLED'
+            : 'ADMIN_ATTENDANCE_DISABLED',
+          targetType: 'USER',
+          targetId: id,
+          metadata: { previousEnabled: target.attendanceEnabled, enabled },
+          context,
+        },
+        transaction,
+      );
+    });
     return this.detail(id);
   }
 }

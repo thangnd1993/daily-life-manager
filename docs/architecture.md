@@ -42,7 +42,10 @@ operations with debounced filters and guarded lazy routes.
 
 ## Daily attendance
 
-Attendance belongs to a user and is uniquely constrained by user and normalized local date. The API derives that date
+Attendance belongs to a user and is uniquely constrained by user and normalized local date. Work duration is stored as
+integer minutes. Historical check-ins migrate deterministically to `240` minutes with `WORKED` status. Admin controls
+whether Attendance is enabled; users control persistent Leave Mode and can edit today or historical dates to a duration
+or explicit `OFF` state with a required reason. The API derives that date
 from server time using a validated IANA timezone; clients cannot submit arbitrary attendance dates. User endpoints expose
 today, check-in, and monthly history, while the explicit ADMIN route provides read-only selected-user inspection.
 
@@ -83,6 +86,13 @@ Gold Alert evaluation commits `GoldAlertTrigger` first. It then idempotently cre
 The Flutter project has an Android host but no production Firebase configuration. Its Dart push boundary, auth lifecycle,
 registration, token refresh, logout deactivation, permission denial, and Gold Alert tap routing are implemented and
 unit-testable. Real Firebase initialization belongs in a platform-backed `PushProvider` after native Firebase setup.
+
+Attendance automatic work recording uses one deterministic BullMQ scheduler registered hourly by default (configurable
+with `ATTENDANCE_AUTO_INTERVAL_MINUTES`). Each evaluation calculates every eligible active user's current local date,
+skips disabled and Leave Mode accounts, and relies on the database uniqueness constraint to create at most one daily
+record. A successful `AUTO` record creates one notification keyed uniquely to that Attendance record and then uses the
+existing durable notification delivery queue. Hourly evaluation supports timezones without using the server UTC date and
+never backfills days skipped during Leave Mode.
 
 ## Mobile application shell (Milestone 10)
 

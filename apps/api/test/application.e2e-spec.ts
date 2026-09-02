@@ -125,6 +125,11 @@ describe('critical application journeys (e2e)', () => {
       list.body.items.map((item: { email: string }) => item.email),
     ).toContain('member@example.com');
     const memberId = member.user.id as string;
+    await request(app.getHttpServer())
+      .patch(`/api/admin/users/${memberId}/attendance`)
+      .set('Authorization', bearer(adminToken))
+      .send({ enabled: true })
+      .expect(200);
 
     await request(app.getHttpServer())
       .get(`/api/admin/users/${memberId}`)
@@ -231,6 +236,11 @@ describe('critical application journeys (e2e)', () => {
 
   it('enforces refresh and attendance concurrency without timing assumptions', async () => {
     const member = await register('concurrency@example.com');
+    await request(app.getHttpServer())
+      .patch(`/api/admin/users/${member.user.id}/attendance`)
+      .set('Authorization', bearer(adminToken))
+      .send({ enabled: true })
+      .expect(200);
     const refreshResults = await Promise.all([
       request(app.getHttpServer())
         .post('/api/auth/refresh')

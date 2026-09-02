@@ -13,11 +13,11 @@ class AttendanceScreen extends StatefulWidget {
 
 class _AttendanceScreenState extends State<AttendanceScreen>
     with AutomaticKeepAliveClientMixin {
-  bool loading = true;
-  bool checkedIn = false;
-  String? checkedInAt;
-  String? error;
+  bool loading = true, enabled = false, leaveMode = false;
+  String? error, leaveReason;
+  Map<String, dynamic>? today;
   List<Map<String, dynamic>> records = const [];
+  int workedDays = 0, totalMinutes = 0, offDays = 0;
   @override
   bool get wantKeepAlive => true;
 
@@ -28,54 +28,53 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   }
 
   Future<void> _load() async {
+    if (mounted) {
+      setState(() {
+        loading = true;
+        error = null;
+      });
+    }
     try {
       final now = DateTime.now();
-      final results = await Future.wait([
+      final data = await Future.wait([
         widget.api.attendanceToday(AppConfig.timezone),
         widget.api.attendanceMonth(now.year, now.month)
       ]);
-      if (!mounted) return;
+      final current = data[0], month = data[1];
+      if (!mounted) {
+        return;
+      }
       setState(() {
-        checkedIn = results[0]['checkedIn'] == true;
-        checkedInAt = results[0]['record']?['checkedInAt'] as String?;
-        records = (results[1]['items'] as List<dynamic>? ?? const [])
+        enabled = current['featureEnabled'] != false;
+        leaveMode = current['leaveModeEnabled'] == true;
+        leaveReason = current['leaveReason'] as String?;
+        today = current['record'] as Map<String, dynamic>?;
+        records = (month['items'] as List<dynamic>? ?? const [])
             .cast<Map<String, dynamic>>();
+        workedDays = month['workedDays'] as int? ?? 0;
+        totalMinutes = month['totalWorkedMinutes'] as int? ?? 0;
+        offDays = month['offDays'] as int? ?? 0;
         loading = false;
-        error = null;
       });
     } catch (_) {
       if (mounted) {
         setState(() {
           loading = false;
-          error = 'Attendance could not be loaded.';
+          error = 'Work records could not be loaded.';
         });
       }
     }
   }
 
-  Future<void> _checkIn() async {
-    setState(() => loading = true);
-    try {
-      await widget.api.checkIn(AppConfig.timezone);
-      await _load();
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          loading = false;
-          error = 'Check-in was not completed. Pull down or retry.';
-        });
-      }
-    }
+  String _duration(int minutes) {
+    if (minutes <= 0) return 'Off';
+    final h = minutes ~/ 60, m = minutes % 60;
+    return m == 0 ? '$h h' : '$h h $m min';
   }
 
-  String _friendlyCheckInTime() {
-    final parsed = DateTime.tryParse(checkedInAt ?? '')?.toLocal();
-    return parsed == null
-        ? 'today'
-        : TimeOfDay.fromDateTime(parsed).format(context);
-  }
-
-  String _shortDate(DateTime date) {
+  String _date(dynamic value) {
+    final date = DateTime.tryParse(value?.toString() ?? '')?.toLocal();
+    if (date == null) return 'Work day';
     const months = [
       'Jan',
       'Feb',
@@ -90,195 +89,298 @@ class _AttendanceScreenState extends State<AttendanceScreen>
       'Nov',
       'Dec'
     ];
-    return '${date.day.toString().padLeft(2, '0')} ${months[date.month - 1]}';
+    return '${date.day.toString().padLeft(2, '0')} ${months[date.month - 1]} ${date.year}';
   }
 
-  String _historyDate(dynamic value) {
-    final parsed = DateTime.tryParse(value?.toString() ?? '');
-    return parsed == null
-        ? 'Recent check-in'
-        : '${_shortDate(parsed)} ${parsed.year}';
+  Future<void> _toggleLeave(bool value) async {
+    String? reason;
+    if (value) {
+      final controller = TextEditingController();
+      final confirmed = await showModalBottomSheet<bool>(
+          context: context,
+          builder: (context) => SheetFrame(
+              title: 'Turn on Leave Mode?',
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Text(
+                        'Automatic daily attendance will be paused until you turn Leave Mode off.'),
+                    const SizedBox(height: 16),
+                    TextField(
+                        controller: controller,
+                        decoration: const InputDecoration(
+                            labelText: 'Reason (optional)')),
+                    const SizedBox(height: 16),
+                    FilledButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        child: const Text('Pause automatic attendance')),
+                  ])));
+      reason = controller.text.trim();
+      controller.dispose();
+      if (confirmed != true) return;
+    }
+    await widget.api.setAttendanceLeaveMode(value,
+        reason: reason?.isEmpty == true ? null : reason);
+    await _load();
   }
 
-  String _friendlySource(Map<String, dynamic> record) {
-    final source = record['source']?.toString().toLowerCase();
-    final sourceLabel = source == null || source.isEmpty
-        ? 'Mobile'
-        : '${source[0].toUpperCase()}${source.substring(1)}';
-    final checkedAt =
-        DateTime.tryParse(record['checkedInAt']?.toString() ?? '')?.toLocal();
-    return checkedAt == null
-        ? sourceLabel
-        : '${TimeOfDay.fromDateTime(checkedAt).format(context)} · $sourceLabel';
+  Future<void> _edit([Map<String, dynamic>? record]) async {
+    final initial = record?['workedMinutes'] as int? ?? 240;
+    var isOff = initial == 0, hours = initial ~/ 60, minutes = initial % 60;
+    final reason =
+        TextEditingController(text: record?['offReason'] as String? ?? '');
+    final date = DateTime.tryParse(record?['attendanceDate']?.toString() ?? '')
+            ?.toLocal() ??
+        DateTime.now();
+    final saved = await showModalBottomSheet<bool>(
+        context: context,
+        isScrollControlled: true,
+        builder: (context) => StatefulBuilder(
+            builder: (context, setSheet) => SheetFrame(
+                title: _date(date.toIso8601String()),
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      CompactSegmented<bool>(
+                          values: const {false: 'Working day', true: 'Off'},
+                          selected: isOff,
+                          onSelected: (value) => setSheet(() => isOff = value)),
+                      const SizedBox(height: 16),
+                      if (!isOff)
+                        Row(children: [
+                          Expanded(
+                              child: DropdownButtonFormField<int>(
+                                  initialValue: hours,
+                                  decoration:
+                                      const InputDecoration(labelText: 'Hours'),
+                                  items: List.generate(
+                                      13,
+                                      (i) => DropdownMenuItem(
+                                          value: i, child: Text('$i'))),
+                                  onChanged: (v) =>
+                                      setSheet(() => hours = v ?? 0))),
+                          const SizedBox(width: 12),
+                          Expanded(
+                              child: DropdownButtonFormField<int>(
+                                  initialValue: minutes,
+                                  decoration: const InputDecoration(
+                                      labelText: 'Minutes'),
+                                  items: const [0, 15, 30, 45]
+                                      .map((m) => DropdownMenuItem(
+                                          value: m, child: Text('$m')))
+                                      .toList(),
+                                  onChanged: (v) =>
+                                      setSheet(() => minutes = v ?? 0))),
+                        ])
+                      else
+                        TextField(
+                            controller: reason,
+                            decoration: const InputDecoration(
+                                labelText: 'Reason',
+                                hintText: 'Sick leave, personal leave…')),
+                      const SizedBox(height: 18),
+                      FilledButton(
+                          onPressed: () {
+                            if (isOff && reason.text.trim().isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                      content: Text(
+                                          'Please provide an OFF reason.')));
+                              return;
+                            }
+                            Navigator.pop(context, true);
+                          },
+                          child: const Text('Save work record')),
+                    ]))));
+    if (saved == true) {
+      final key =
+          '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+      await widget.api.updateAttendanceDay(
+          key, isOff ? 0 : hours * 60 + minutes, AppConfig.timezone,
+          offReason: isOff ? reason.text.trim() : null);
+      await _load();
+    }
+    reason.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final now = DateTime.now();
-    final time = TimeOfDay.fromDateTime(now).format(context);
+    final todayMinutes =
+        today?['workedMinutes'] as int? ?? (today == null ? 0 : 240);
     return Scaffold(
       body: RefreshIndicator(
           onRefresh: _load,
           child: ListView(
               padding: const EdgeInsets.fromLTRB(
-                  AppSpace.page, 20, AppSpace.page, 120),
+                  AppSpace.page, 18, AppSpace.page, 120),
               children: [
                 Row(children: [
                   const Icon(Icons.arrow_back_ios_new_rounded, size: 17),
                   const SizedBox(width: 20),
                   Text('Attendance',
-                      style: Theme.of(context).textTheme.titleLarge),
+                      style: Theme.of(context).textTheme.titleLarge)
                 ]),
-                const SizedBox(height: AppSpace.md),
+                const SizedBox(height: 18),
                 if (loading)
-                  const Center(
-                      child: Padding(
-                          padding: EdgeInsets.all(48),
-                          child: CircularProgressIndicator()))
+                  const Padding(
+                      padding: EdgeInsets.all(48),
+                      child: Center(child: CircularProgressIndicator()))
                 else if (error != null)
                   AppStateCard(
                       icon: Icons.cloud_off_outlined,
                       title: 'Attendance unavailable',
                       message: error!,
                       onRetry: _load)
-                else
+                else if (!enabled)
+                  const AppStateCard(
+                      icon: Icons.event_busy_outlined,
+                      title: 'Attendance is disabled',
+                      message:
+                          'Ask an administrator to enable work tracking for your account.')
+                else ...[
                   GlassSurface(
-                    padding: const EdgeInsets.all(18),
-                    child: AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 260),
-                        child: Column(
-                            key: ValueKey(checkedIn),
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Expanded(
-                                        child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                          Text(time,
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .headlineLarge),
-                                          const SizedBox(height: 3),
-                                          Text('${_shortDate(now)} ${now.year}',
-                                              style: const TextStyle(
-                                                  fontSize: 12,
-                                                  color: AppColors.secondary)),
-                                        ])),
-                                    Container(
-                                        width: 64,
-                                        height: 64,
-                                        decoration: BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            color: AppColors.accent,
-                                            border: Border.all(
-                                                color: const Color(0x88ffffff),
-                                                width: 8),
-                                            boxShadow: const [
-                                              BoxShadow(
-                                                  color: Color(0x44246bfd),
-                                                  blurRadius: 20)
-                                            ]),
-                                        child: Icon(
-                                            checkedIn
-                                                ? Icons.check_rounded
-                                                : Icons.fingerprint_rounded,
-                                            color: Colors.white,
-                                            size: 26)),
-                                  ]),
-                              const SizedBox(height: AppSpace.sm),
-                              Align(
-                                  alignment: Alignment.centerRight,
-                                  child: Column(children: [
-                                    Text(
-                                        checkedIn
-                                            ? 'You are all set'
-                                            : 'Ready for today?',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .titleMedium),
-                                    Text(
-                                        checkedIn
-                                            ? 'Checked in at ${_friendlyCheckInTime()}'
-                                            : 'Check in with one tap',
-                                        style: const TextStyle(
-                                            fontSize: 11,
-                                            color: AppColors.secondary)),
-                                  ])),
-                              const SizedBox(height: AppSpace.sm),
-                              if (!checkedIn)
-                                SizedBox(
-                                    width: double.infinity,
-                                    child: FilledButton.icon(
-                                        onPressed: _checkIn,
-                                        icon: const Icon(
-                                            Icons.touch_app_outlined),
-                                        label: const Text('Check in now')))
-                              else
-                                Container(
-                                    height: 40,
-                                    decoration: BoxDecoration(
-                                        border:
-                                            Border.all(color: AppColors.line),
-                                        borderRadius:
-                                            BorderRadius.circular(14)),
-                                    child: const Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          Icon(Icons.verified_rounded,
-                                              color: AppColors.secondary,
-                                              size: 16),
-                                          SizedBox(width: 8),
-                                          Text('Completed',
-                                              style: TextStyle(fontSize: 12)),
-                                        ])),
+                      padding: const EdgeInsets.all(18),
+                      child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('THIS MONTH',
+                                style: Theme.of(context).textTheme.labelMedium),
+                            const SizedBox(height: 12),
+                            Row(children: [
+                              Expanded(
+                                  child: _Total(
+                                      value: '$workedDays',
+                                      label: 'Worked days')),
+                              Expanded(
+                                  child: _Total(
+                                      value: totalMinutes == 0
+                                          ? '0 h'
+                                          : _duration(totalMinutes),
+                                      label: 'Total hours')),
+                              Expanded(
+                                  child: _Total(
+                                      value: '$offDays', label: 'Off days'))
+                            ]),
+                          ])),
+                  const SizedBox(height: 12),
+                  GlassSurface(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 10),
+                      child: Row(children: [
+                        const Icon(Icons.beach_access_outlined,
+                            color: AppColors.accent),
+                        const SizedBox(width: 12),
+                        Expanded(
+                            child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                              Text(
+                                  leaveMode
+                                      ? 'Leave Mode active'
+                                      : 'Leave Mode',
+                                  style:
+                                      Theme.of(context).textTheme.titleMedium),
+                              Text(
+                                  leaveMode
+                                      ? 'Automatic attendance is paused${leaveReason == null ? '' : ' · $leaveReason'}'
+                                      : 'Pause automatic daily attendance',
+                                  style: const TextStyle(
+                                      fontSize: 11, color: AppColors.secondary))
                             ])),
-                  ),
-                const SizedBox(height: AppSpace.md),
-                const SectionHeader(title: 'This month'),
-                const SizedBox(height: AppSpace.sm),
-                if (!loading && error == null)
+                        Switch(value: leaveMode, onChanged: _toggleLeave),
+                      ])),
+                  const SizedBox(height: 16),
+                  SectionHeader(
+                      title: 'Today',
+                      action: 'Edit',
+                      onAction: () => _edit(today)),
                   GlassSurface(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpace.lg, vertical: AppSpace.md),
-                    child: Row(children: [
-                      Text('${records.length}',
-                          style: Theme.of(context).textTheme.headlineMedium),
-                      const SizedBox(width: 6),
-                      Text(records.length == 1 ? 'day' : 'days'),
-                      const Spacer(),
-                      const StatusMark(label: 'Present', positive: true),
-                    ]),
-                  ),
-                if (!loading && error == null)
-                  const SizedBox(height: AppSpace.md),
-                const SectionHeader(title: 'Recent check-ins'),
-                const SizedBox(height: AppSpace.sm),
-                if (!loading && error == null && records.isEmpty)
-                  const GlassSurface(
-                      padding: EdgeInsets.symmetric(vertical: 20),
-                      child: Center(
-                          child: Text('No check-ins yet',
+                      padding: const EdgeInsets.all(16),
+                      onTap: () => _edit(today),
+                      child: Row(children: [
+                        CircleAvatar(
+                            radius: 25,
+                            backgroundColor: todayMinutes > 0
+                                ? AppColors.accentSoft
+                                : AppColors.line,
+                            child: Icon(
+                                todayMinutes > 0
+                                    ? Icons.schedule_rounded
+                                    : Icons.event_busy_outlined,
+                                color: AppColors.accent)),
+                        const SizedBox(width: 14),
+                        Expanded(
+                            child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                              Text(_duration(todayMinutes),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headlineMedium),
+                              Text(
+                                  today == null
+                                      ? (leaveMode
+                                          ? 'Leave Mode active'
+                                          : 'No record yet')
+                                      : todayMinutes > 0
+                                          ? (today?['source'] == 'AUTO'
+                                              ? 'Auto recorded'
+                                              : 'Edited')
+                                          : (today?['offReason'] ?? 'Off'),
+                                  style: const TextStyle(
+                                      color: AppColors.secondary))
+                            ])),
+                        const Icon(Icons.chevron_right_rounded),
+                      ])),
+                  const SizedBox(height: 18),
+                  const SectionHeader(title: 'Monthly history'),
+                  const SizedBox(height: 8),
+                  if (records.isEmpty)
+                    const GlassSurface(
+                        padding: EdgeInsets.all(24),
+                        child: Center(
+                            child: Text('No work records this month',
+                                style: TextStyle(color: AppColors.secondary))))
+                  else
+                    GroupedSurface(
+                        children: records.map((record) {
+                      final minutes = record['workedMinutes'] as int? ?? 240;
+                      return AppRow(
+                          leading: Icon(
+                              minutes > 0
+                                  ? Icons.check_circle_outline_rounded
+                                  : Icons.remove_circle_outline_rounded,
+                              color: minutes > 0
+                                  ? AppColors.success
+                                  : AppColors.warning),
+                          title: _date(record['attendanceDate']),
+                          subtitle: minutes > 0
+                              ? '${record['source'] == 'AUTO' ? 'Auto' : 'Edited'} · ${_duration(minutes)}'
+                              : 'Off · ${record['offReason'] ?? 'Reason unavailable'}',
+                          trailing: Text(_duration(minutes),
                               style: TextStyle(
-                                  fontSize: 12, color: AppColors.secondary))))
-                else
-                  GroupedSurface(
-                      children: records
-                          .take(31)
-                          .map((record) => AppRow(
-                                leading: const Icon(
-                                    Icons.check_circle_outline_rounded,
-                                    color: AppColors.accent),
-                                title: _historyDate(record['attendanceDate']),
-                                subtitle: _friendlySource(record),
-                              ))
-                          .toList()),
+                                  fontWeight: FontWeight.w600,
+                                  color: minutes > 0
+                                      ? AppColors.ink
+                                      : AppColors.warning)),
+                          onTap: () => _edit(record));
+                    }).toList()),
+                ],
               ])),
     );
   }
+}
+
+class _Total extends StatelessWidget {
+  const _Total({required this.value, required this.label});
+  final String value, label;
+  @override
+  Widget build(BuildContext context) =>
+      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(value, style: Theme.of(context).textTheme.headlineMedium),
+        const SizedBox(height: 3),
+        Text(label,
+            style: const TextStyle(fontSize: 11, color: AppColors.secondary))
+      ]);
 }

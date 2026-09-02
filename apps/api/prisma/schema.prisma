@@ -29,6 +29,12 @@ enum AttendanceSource {
   MOBILE
   WEB
   ADMIN
+  AUTO
+}
+
+enum AttendanceStatus {
+  WORKED
+  OFF
 }
 
 enum FinanceTransactionType {
@@ -58,6 +64,7 @@ enum PushPlatform {
 
 enum NotificationType {
   GOLD_ALERT
+  ATTENDANCE_AUTO_RECORDED
 }
 
 enum NotificationStatus {
@@ -79,27 +86,33 @@ enum AuditOutcome {
 }
 
 model User {
-  id                    String                @id @default(cuid())
-  email                 String                @unique
-  passwordHash          String
-  displayName           String
-  role                  UserRole              @default(USER)
-  status                UserStatus            @default(ACTIVE)
-  emailVerifiedAt       DateTime?
-  lastLoginAt           DateTime?
-  createdAt             DateTime              @default(now())
-  updatedAt             DateTime              @updatedAt
-  authSessions          AuthSession[]
-  passwordResetTokens   PasswordResetToken[]
-  attendances           Attendance[]
-  transactionCategories TransactionCategory[]
-  financeTransactions   FinanceTransaction[]
-  financeBudgets        FinanceBudget[]
-  goldAlerts            GoldAlert[]
-  goldAlertTriggers     GoldAlertTrigger[]
-  pushDevices           PushDevice[]
-  notifications         Notification[]
-  auditLogs             AuditLog[]
+  id                      String                @id @default(cuid())
+  email                   String                @unique
+  passwordHash            String
+  displayName             String
+  role                    UserRole              @default(USER)
+  status                  UserStatus            @default(ACTIVE)
+  emailVerifiedAt         DateTime?
+  lastLoginAt             DateTime?
+  createdAt               DateTime              @default(now())
+  updatedAt               DateTime              @updatedAt
+  attendanceEnabled       Boolean               @default(false)
+  leaveModeEnabled        Boolean               @default(false)
+  leaveModeStartedAt      DateTime?
+  leaveReason             String?
+  attendanceTimezone      String                @default("Asia/Ho_Chi_Minh")
+  defaultDailyWorkMinutes Int                   @default(240)
+  authSessions            AuthSession[]
+  passwordResetTokens     PasswordResetToken[]
+  attendances             Attendance[]
+  transactionCategories   TransactionCategory[]
+  financeTransactions     FinanceTransaction[]
+  financeBudgets          FinanceBudget[]
+  goldAlerts              GoldAlert[]
+  goldAlertTriggers       GoldAlertTrigger[]
+  pushDevices             PushDevice[]
+  notifications           Notification[]
+  auditLogs               AuditLog[]
 
   @@index([status])
 }
@@ -187,12 +200,14 @@ model Notification {
   body               String
   data               Json
   status             NotificationStatus     @default(PENDING)
-  goldAlertTriggerId String                 @unique
+  goldAlertTriggerId String?                @unique
+  attendanceId       String?                @unique
   createdAt          DateTime               @default(now())
   sentAt             DateTime?
   failedAt           DateTime?
   user               User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  goldAlertTrigger   GoldAlertTrigger       @relation(fields: [goldAlertTriggerId], references: [id], onDelete: Cascade)
+  goldAlertTrigger   GoldAlertTrigger?      @relation(fields: [goldAlertTriggerId], references: [id], onDelete: Cascade)
+  attendance         Attendance?            @relation(fields: [attendanceId], references: [id], onDelete: Cascade)
   deliveries         NotificationDelivery[]
 
   @@index([userId, createdAt(sort: Desc)])
@@ -288,12 +303,17 @@ model Attendance {
   userId         String
   attendanceDate DateTime         @db.Date
   checkedInAt    DateTime         @default(now())
+  workedMinutes  Int              @default(240)
+  status         AttendanceStatus @default(WORKED)
+  offReason      String?
+  autoRecordedAt DateTime?
   timezone       String
   source         AttendanceSource
   note           String?
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
   user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  notification   Notification?
 
   @@unique([userId, attendanceDate])
   @@index([userId, attendanceDate(sort: Desc)])

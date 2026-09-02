@@ -10,6 +10,10 @@ export interface AdminUserItem {
   lastLoginAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
+  attendanceEnabled: boolean;
+  leaveModeEnabled: boolean;
+  attendanceTimezone: string;
+  defaultDailyWorkMinutes: number;
 }
 
 export interface AdminUserDetail extends AdminUserItem {

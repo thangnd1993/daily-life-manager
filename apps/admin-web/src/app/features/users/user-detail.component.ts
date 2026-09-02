@@ -98,6 +98,27 @@ export class UserDetailComponent {
     });
   }
 
+  toggleAttendance(user: AdminUserDetail): void {
+    this.saving = true;
+    this.users.updateAttendanceEnabled(user.id, !user.attendanceEnabled).subscribe({
+      next: () => {
+        this.saving = false;
+        this.feedback = `Attendance ${user.attendanceEnabled ? 'disabled' : 'enabled'}.`;
+        this.reloadState.next(this.reloadState.value + 1);
+      },
+      error: () => {
+        this.saving = false;
+        this.feedback = 'Attendance configuration could not be updated.';
+      },
+    });
+  }
+
+  formatDuration(minutes: number): string {
+    const hours = Math.floor(minutes / 60);
+    const remainder = minutes % 60;
+    return remainder ? `${hours} h ${remainder} min` : `${hours} h`;
+  }
+
   retry(): void {
     this.reloadState.next(this.reloadState.value + 1);
   }

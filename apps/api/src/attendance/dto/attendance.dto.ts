@@ -2,6 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   IsInt,
+  IsBoolean,
   IsOptional,
   IsString,
   Length,
@@ -52,4 +53,35 @@ export class AttendanceHistoryQueryDto {
   @Min(1)
   @Max(100)
   pageSize = 31;
+}
+
+export class UpdateAttendanceDto {
+  @ApiProperty({ minimum: 0, maximum: 1440 })
+  @IsInt()
+  @Min(0)
+  @Max(1440)
+  workedMinutes!: number;
+
+  @ApiPropertyOptional({ maxLength: 280 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(280)
+  offReason?: string;
+
+  @ApiProperty({ example: 'Asia/Ho_Chi_Minh' })
+  @IsString()
+  @Length(1, 100)
+  timezone!: string;
+}
+
+export class LeaveModeDto {
+  @ApiProperty()
+  @IsBoolean()
+  enabled!: boolean;
+
+  @ApiPropertyOptional({ maxLength: 280 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(280)
+  reason?: string;
 }

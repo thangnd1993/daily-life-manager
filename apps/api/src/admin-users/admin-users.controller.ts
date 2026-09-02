@@ -24,7 +24,11 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { AdminUsersService } from './admin-users.service';
 import { AdminUserDetail, PaginatedUsers } from './admin-users.types';
-import { ListUsersQueryDto, UpdateUserStatusDto } from './dto/admin-users.dto';
+import {
+  ListUsersQueryDto,
+  UpdateAttendanceEnabledDto,
+  UpdateUserStatusDto,
+} from './dto/admin-users.dto';
 
 @ApiTags('admin users')
 @ApiBearerAuth()
@@ -61,6 +65,21 @@ export class AdminUsersController {
       actor,
       id,
       dto.status,
+      auditContext(request),
+    );
+  }
+
+  @Patch(':id/attendance')
+  updateAttendance(
+    @CurrentUser() actor: AuthenticatedUser,
+    @Param('id') id: string,
+    @Body() dto: UpdateAttendanceEnabledDto,
+    @Req() request: Request,
+  ): Promise<AdminUserDetail> {
+    return this.users.updateAttendanceEnabled(
+      actor,
+      id,
+      dto.enabled,
       auditContext(request),
     );
   }

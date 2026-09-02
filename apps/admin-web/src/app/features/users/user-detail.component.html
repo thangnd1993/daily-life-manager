@@ -60,6 +60,30 @@
       </div>
 
       <section class="glass status-panel">
+        <div class="attendance-heading">
+          <div>
+            <h2>Attendance configuration</h2>
+            <p>Admin-controlled daily work tracking.</p>
+          </div>
+          <button
+            type="button"
+            [class.primary]="!user.attendanceEnabled"
+            [disabled]="saving"
+            (click)="toggleAttendance(user)"
+          >
+            {{ user.attendanceEnabled ? 'Disable Attendance' : 'Enable Attendance' }}
+          </button>
+        </div>
+        <p>
+          <strong>{{ user.attendanceEnabled ? 'Enabled' : 'Disabled' }}</strong> · Default
+          {{ formatDuration(user.defaultDailyWorkMinutes) }} · {{ user.attendanceTimezone }}
+        </p>
+        @if (user.leaveModeEnabled) {
+          <p>Leave Mode is active for this user.</p>
+        }
+      </section>
+
+      <section class="glass status-panel">
         <div>
           <h2>Account status</h2>
           <p>Disabling an account immediately revokes its active sessions. Role is read-only.</p>
@@ -103,7 +127,7 @@
         <div class="attendance-heading">
           <div>
             <h2>Attendance</h2>
-            <p>Read-only monthly check-in history.</p>
+            <p>Read-only monthly work records.</p>
           </div>
           <div class="actions">
             <button type="button" (click)="changeAttendanceMonth(-1)">Previous</button
@@ -116,16 +140,25 @@
           } @else if (attendance.error) {
             <p class="error">Attendance could not be loaded.</p>
           } @else if (!attendance.data?.items?.length) {
-            <p>No check-ins for this month.</p>
+            <p>No work records for this month.</p>
           } @else {
             <p>
-              <strong>{{ attendance.data?.checkedInDays }}</strong> checked-in days
+              <strong>{{ attendance.data?.workedDays }}</strong> worked days ·
+              <strong>{{ formatDuration(attendance.data?.totalWorkedMinutes ?? 0) }}</strong> total ·
+              {{ attendance.data?.offDays }} off days
             </p>
             @for (record of attendance.data?.items; track record.id) {
               <dl>
                 <div>
                   <dt>{{ record.attendanceDate | date: 'mediumDate' }}</dt>
-                  <dd>{{ record.checkedInAt | date: 'shortTime' }} · {{ record.timezone }} · {{ record.source }}</dd>
+                  <dd>
+                    {{
+                      record.status === 'OFF'
+                        ? 'Off · ' + (record.offReason ?? 'No reason')
+                        : formatDuration(record.workedMinutes)
+                    }}
+                    · {{ record.source }}
+                  </dd>
                 </div>
               </dl>
             }

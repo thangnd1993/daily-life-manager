@@ -70,9 +70,8 @@ void main() {
     await tester.pump();
     await tester.tap(find.text('Attendance'));
     await tester.pumpAndSettle();
-    expect(find.text('You are all set'), findsOneWidget);
-    expect(find.text('Completed'), findsOneWidget);
-    expect(find.text('This month'), findsOneWidget);
+    expect(find.text('THIS MONTH'), findsOneWidget);
+    expect(find.text('4 h'), findsWidgets);
     expect(find.text('29 Aug 2026'), findsOneWidget);
   });
 
@@ -343,7 +342,8 @@ void main() {
           status: 'ACTIVE');
     await tester.pumpWidget(DailyLifeManagerApp(authController: auth));
     await tester.pumpAndSettle();
-    expect(find.text('Checked in today'), findsOneWidget);
+    expect(find.text("Today's work"), findsOneWidget);
+    expect(find.text('4 h recorded'), findsOneWidget);
     expect(find.text('750.000 ₫'), findsOneWidget);
     expect(find.text('1 active'), findsOneWidget);
     expect(find.text('SJC Gold'), findsOneWidget);

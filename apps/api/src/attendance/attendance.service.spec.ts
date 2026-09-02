@@ -9,21 +9,40 @@ import { AttendanceService } from './attendance.service';
 import { AttendanceHistoryQueryDto } from './dto/attendance.dto';
 
 describe('AttendanceService', () => {
+  const notifications = { ensureAttendance: jest.fn() };
   const prisma = {
     attendance: {
       findUnique: jest.fn(),
       create: jest.fn(),
       findMany: jest.fn(),
       count: jest.fn(),
+      aggregate: jest.fn(),
+      upsert: jest.fn(),
     },
-    user: { count: jest.fn() },
+    user: {
+      count: jest.fn(),
+      findUnique: jest.fn(),
+      findMany: jest.fn(),
+      update: jest.fn(),
+    },
     $transaction: jest.fn(),
   };
   let service: AttendanceService;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    service = new AttendanceService(prisma as unknown as PrismaService);
+    prisma.user.findUnique.mockResolvedValue({
+      attendanceEnabled: true,
+      leaveModeEnabled: false,
+      leaveModeStartedAt: null,
+      leaveReason: null,
+      attendanceTimezone: 'Asia/Ho_Chi_Minh',
+      defaultDailyWorkMinutes: 240,
+    });
+    service = new AttendanceService(
+      prisma as unknown as PrismaService,
+      notifications as never,
+    );
   });
 
   it('calculates the local date across a UTC date boundary', () => {
@@ -48,7 +67,7 @@ describe('AttendanceService', () => {
   it('returns today before and after check-in for only the current user', async () => {
     prisma.attendance.findUnique
       .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce({ id: 'attendance-1' });
+      .mockResolvedValueOnce({ id: 'attendance-1', workedMinutes: 240 });
     await expect(service.today('user-1', 'UTC')).resolves.toMatchObject({
       checkedIn: false,
       record: null,
@@ -90,12 +109,18 @@ describe('AttendanceService', () => {
   });
 
   it('filters monthly history by current user and deterministic date range', async () => {
-    prisma.attendance.findMany.mockReturnValue('items-query');
-    prisma.attendance.count.mockReturnValue('count-query');
-    prisma.$transaction.mockResolvedValue([
-      [{ id: 'attendance-1', attendanceDate: new Date('2026-08-12') }],
-      1,
+    prisma.attendance.findMany.mockResolvedValue([
+      {
+        id: 'attendance-1',
+        attendanceDate: new Date('2026-08-12'),
+        workedMinutes: 360,
+      },
     ]);
+    prisma.attendance.count.mockResolvedValueOnce(1).mockResolvedValueOnce(0);
+    prisma.attendance.aggregate.mockResolvedValue({
+      _count: 1,
+      _sum: { workedMinutes: 360 },
+    });
     const query = Object.assign(new AttendanceHistoryQueryDto(), {
       year: 2026,
       month: 8,
@@ -111,7 +136,12 @@ describe('AttendanceService', () => {
 
   it('allows admin history for an existing selected user and rejects missing users', async () => {
     prisma.user.count.mockResolvedValueOnce(1).mockResolvedValueOnce(0);
-    prisma.$transaction.mockResolvedValue([[], 0]);
+    prisma.attendance.findMany.mockResolvedValue([]);
+    prisma.attendance.count.mockResolvedValue(0);
+    prisma.attendance.aggregate.mockResolvedValue({
+      _count: 0,
+      _sum: { workedMinutes: null },
+    });
     const query = Object.assign(new AttendanceHistoryQueryDto(), {
       year: 2026,
       month: 8,
@@ -122,5 +152,68 @@ describe('AttendanceService', () => {
     await expect(service.adminHistory('missing', query)).rejects.toBeInstanceOf(
       NotFoundException,
     );
+  });
+
+  it('requires a reason for OFF and stores zero minutes without counting a worked day', async () => {
+    await expect(
+      service.updateDay('user-1', '2026-08-20', {
+        workedMinutes: 0,
+        timezone: 'UTC',
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    prisma.attendance.upsert.mockResolvedValue({ id: 'off-1' });
+    await service.updateDay('user-1', '2026-08-20', {
+      workedMinutes: 0,
+      timezone: 'UTC',
+      offReason: 'Sick leave',
+    });
+    expect(prisma.attendance.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        update: expect.objectContaining({
+          workedMinutes: 0,
+          status: 'OFF',
+          offReason: 'Sick leave',
+        }),
+      }),
+    );
+  });
+
+  it('persists Leave Mode until the user explicitly disables it', async () => {
+    prisma.user.update.mockResolvedValue({ leaveModeEnabled: true });
+    await service.setLeaveMode('user-1', true, 'Annual leave');
+    expect(prisma.user.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          leaveModeEnabled: true,
+          leaveReason: 'Annual leave',
+        }),
+      }),
+    );
+  });
+
+  it('creates one 240-minute automatic record and its idempotent notification', async () => {
+    prisma.user.findMany.mockResolvedValue([
+      {
+        id: 'user-1',
+        attendanceTimezone: 'Asia/Ho_Chi_Minh',
+        defaultDailyWorkMinutes: 240,
+      },
+    ]);
+    prisma.attendance.findUnique.mockResolvedValue(null);
+    prisma.attendance.create.mockResolvedValue({ id: 'auto-1' });
+    notifications.ensureAttendance.mockResolvedValue({ id: 'notification-1' });
+    await expect(
+      service.runAutomatic(new Date('2026-09-02T01:00:00Z')),
+    ).resolves.toEqual({ eligibleUsers: 1, created: 1 });
+    expect(prisma.attendance.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          workedMinutes: 240,
+          source: 'AUTO',
+          attendanceDate: new Date('2026-09-02T00:00:00.000Z'),
+        }),
+      }),
+    );
+    expect(notifications.ensureAttendance).toHaveBeenCalledWith('auto-1');
   });
 });

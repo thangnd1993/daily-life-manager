@@ -47,6 +47,14 @@ describe('UsersService', () => {
     request.flush({ id: 'user-1', status: 'SUSPENDED' });
   });
 
+  it('updates the admin-controlled Attendance setting', () => {
+    service.updateAttendanceEnabled('user-1', true).subscribe();
+    const request = http.expectOne('admin/users/user-1/attendance');
+    expect(request.request.method).toBe('PATCH');
+    expect(request.request.body).toEqual({ enabled: true });
+    request.flush({ id: 'user-1', attendanceEnabled: true });
+  });
+
   it('maps selected-user attendance month parameters', () => {
     service.attendance('user-1', 2026, 8).subscribe();
     const request = http.expectOne(

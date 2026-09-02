@@ -28,6 +28,10 @@ export class UsersService {
     return this.http.patch<AdminUserDetail>(`admin/users/${id}/status`, { status });
   }
 
+  updateAttendanceEnabled(id: string, enabled: boolean): Observable<AdminUserDetail> {
+    return this.http.patch<AdminUserDetail>(`admin/users/${id}/attendance`, { enabled });
+  }
+
   attendance(id: string, year: number, month: number): Observable<AttendancePage> {
     const params = new HttpParams().set('year', year).set('month', month).set('pageSize', 31);
     return this.http.get<AttendancePage>(`admin/users/${id}/attendance`, { params });

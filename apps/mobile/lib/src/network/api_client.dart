@@ -47,6 +47,20 @@ class ApiClient {
   Future<Map<String, dynamic>> attendanceMonth(int year, int month) async =>
       await request('GET', 'attendance?year=$year&month=$month&pageSize=31')
           as Map<String, dynamic>;
+  Future<Map<String, dynamic>> updateAttendanceDay(
+          String date, int workedMinutes, String timezone,
+          {String? offReason}) async =>
+      await request('PATCH', 'attendance/$date', body: {
+        'workedMinutes': workedMinutes,
+        'timezone': timezone,
+        if (offReason != null) 'offReason': offReason,
+      }) as Map<String, dynamic>;
+  Future<Map<String, dynamic>> setAttendanceLeaveMode(bool enabled,
+          {String? reason}) async =>
+      await request('PATCH', 'attendance/leave-mode', body: {
+        'enabled': enabled,
+        if (reason != null) 'reason': reason,
+      }) as Map<String, dynamic>;
   Future<List<Map<String, dynamic>>> financeCategories() async =>
       (await request('GET', 'finance/categories') as List<dynamic>)
           .cast<Map<String, dynamic>>();

@@ -40,6 +40,11 @@ export const environmentSchema = Joi.object({
   TRUST_PROXY_HOPS: Joi.number().integer().min(0).max(3).default(0),
   REDIS_HOST: Joi.string().hostname().default('localhost'),
   REDIS_PORT: Joi.number().port().default(6379),
+  ATTENDANCE_AUTO_INTERVAL_MINUTES: Joi.number()
+    .integer()
+    .min(5)
+    .max(1440)
+    .default(60),
   REFRESH_TOKEN_TTL_DAYS: Joi.number().integer().min(1).max(365).default(30),
   PASSWORD_RESET_TTL_MINUTES: Joi.number()
     .integer()

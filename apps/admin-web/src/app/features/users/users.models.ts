@@ -10,6 +10,10 @@ export interface AdminUser {
   lastLoginAt: string | null;
   createdAt: string;
   updatedAt: string;
+  attendanceEnabled: boolean;
+  leaveModeEnabled: boolean;
+  attendanceTimezone: string;
+  defaultDailyWorkMinutes: number;
 }
 
 export interface AdminUserDetail extends AdminUser {
@@ -42,8 +46,14 @@ export interface AttendancePage {
     timezone: string;
     source: string;
     note: string | null;
+    workedMinutes: number;
+    status: 'WORKED' | 'OFF';
+    offReason: string | null;
   }>;
   checkedInDays: number;
+  workedDays: number;
+  totalWorkedMinutes: number;
+  offDays: number;
   year: number;
   month: number;
 }

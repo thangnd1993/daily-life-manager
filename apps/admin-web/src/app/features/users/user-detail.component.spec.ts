@@ -15,12 +15,17 @@ const detail = {
   createdAt: '2026-08-29T00:00:00Z',
   updatedAt: '2026-08-29T00:00:00Z',
   activeSessionCount: 2,
+  attendanceEnabled: true,
+  leaveModeEnabled: false,
+  attendanceTimezone: 'Asia/Ho_Chi_Minh',
+  defaultDailyWorkMinutes: 240,
 };
 
 describe('UserDetailComponent', () => {
   const users = {
     detail: jest.fn(),
     updateStatus: jest.fn(),
+    updateAttendanceEnabled: jest.fn(),
     attendance: jest.fn(),
     finance: jest.fn(),
     financeInsights: jest.fn(),
@@ -29,6 +34,7 @@ describe('UserDetailComponent', () => {
   beforeEach(async () => {
     users.detail.mockReset().mockReturnValue(of(detail));
     users.updateStatus.mockReset().mockReturnValue(of({ ...detail, status: 'SUSPENDED' }));
+    users.updateAttendanceEnabled.mockReset().mockReturnValue(of({ ...detail, attendanceEnabled: false }));
     users.attendance.mockReset().mockReturnValue(
       of({
         items: [
@@ -39,9 +45,15 @@ describe('UserDetailComponent', () => {
             timezone: 'Asia/Ho_Chi_Minh',
             source: 'MOBILE',
             note: null,
+            workedMinutes: 240,
+            status: 'WORKED',
+            offReason: null,
           },
         ],
         checkedInDays: 1,
+        workedDays: 1,
+        totalWorkedMinutes: 240,
+        offDays: 0,
         year: 2026,
         month: 8,
       }),
@@ -129,14 +141,14 @@ describe('UserDetailComponent', () => {
     expect(users.attendance).toHaveBeenCalledWith('user-1', expect.any(Number), expect.any(Number));
     fixture.componentInstance.changeAttendanceMonth(-1);
     expect(users.attendance).toHaveBeenCalledTimes(2);
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('checked-in days');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('worked days');
   });
 
   it('renders attendance empty and error states', () => {
     users.attendance.mockReturnValueOnce(of({ items: [], checkedInDays: 0, year: 2026, month: 8 }));
     let fixture = TestBed.createComponent(UserDetailComponent);
     fixture.detectChanges();
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('No check-ins');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('No work records');
     users.attendance.mockReturnValueOnce(throwError(() => new Error('failed')));
     fixture = TestBed.createComponent(UserDetailComponent);
     fixture.detectChanges();

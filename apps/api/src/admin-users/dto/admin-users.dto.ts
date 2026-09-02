@@ -3,6 +3,7 @@ import { UserRole, UserStatus } from '@prisma/client';
 import { Transform, Type } from 'class-transformer';
 import {
   IsEnum,
+  IsBoolean,
   IsInt,
   IsOptional,
   IsString,
@@ -73,4 +74,10 @@ export class UpdateUserStatusDto {
   @ApiProperty({ enum: UserStatus })
   @IsEnum(UserStatus)
   status!: UserStatus;
+}
+
+export class UpdateAttendanceEnabledDto {
+  @ApiProperty()
+  @IsBoolean()
+  enabled!: boolean;
 }
