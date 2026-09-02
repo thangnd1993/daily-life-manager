@@ -58,6 +58,12 @@ class FakeDatabase {
           status: UserStatus.ACTIVE,
           emailVerifiedAt: null,
           lastLoginAt: null,
+          attendanceEnabled: false,
+          leaveModeEnabled: false,
+          leaveModeStartedAt: null,
+          leaveReason: null,
+          attendanceTimezone: 'Asia/Ho_Chi_Minh',
+          defaultDailyWorkMinutes: 240,
           createdAt: now,
           updatedAt: now,
         };
