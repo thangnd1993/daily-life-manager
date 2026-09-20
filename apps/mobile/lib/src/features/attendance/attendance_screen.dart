@@ -17,7 +17,13 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   String? error, leaveReason;
   Map<String, dynamic>? today;
   List<Map<String, dynamic>> records = const [];
-  int workedDays = 0, totalMinutes = 0, offDays = 0;
+  List<Map<String, dynamic>> timesheetDays = const [], leavePeriods = const [];
+  int workedDays = 0,
+      totalMinutes = 0,
+      offDays = 0,
+      leaveDays = 0,
+      scheduledOffDays = 0,
+      missingDays = 0;
   DateTime displayedMonth = DateTime(DateTime.now().year, DateTime.now().month);
   @override
   bool get wantKeepAlive => true;
@@ -38,9 +44,11 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     try {
       final data = await Future.wait([
         widget.api.attendanceToday(AppConfig.timezone),
-        widget.api.attendanceMonth(displayedMonth.year, displayedMonth.month)
+        widget.api.attendanceMonth(displayedMonth.year, displayedMonth.month),
+        widget.api.attendanceLeavePeriods(),
       ]);
-      final current = data[0], month = data[1];
+      final current = data[0] as Map<String, dynamic>;
+      final month = data[1] as Map<String, dynamic>;
       if (!mounted) {
         return;
       }
@@ -51,9 +59,15 @@ class _AttendanceScreenState extends State<AttendanceScreen>
         today = current['record'] as Map<String, dynamic>?;
         records = (month['items'] as List<dynamic>? ?? const [])
             .cast<Map<String, dynamic>>();
+        timesheetDays = (month['days'] as List<dynamic>? ?? const [])
+            .cast<Map<String, dynamic>>();
+        leavePeriods = (data[2] as List<dynamic>).cast<Map<String, dynamic>>();
         workedDays = month['workedDays'] as int? ?? 0;
         totalMinutes = month['totalWorkedMinutes'] as int? ?? 0;
         offDays = month['offDays'] as int? ?? 0;
+        leaveDays = month['leaveDays'] as int? ?? 0;
+        scheduledOffDays = month['scheduledOffDays'] as int? ?? 0;
+        missingDays = month['missingExpectedDays'] as int? ?? 0;
         loading = false;
       });
     } catch (_) {
@@ -157,6 +171,74 @@ class _AttendanceScreenState extends State<AttendanceScreen>
         (index) =>
             DateTime(displayedMonth.year, displayedMonth.month, index + 1))
       ..sort((a, b) => b.compareTo(a));
+  }
+
+  Future<void> _editLeave([Map<String, dynamic>? period]) async {
+    final start = TextEditingController(
+        text: period?['startDate']?.toString().substring(0, 10) ??
+            _dateKey(DateTime.now()));
+    final end = TextEditingController(
+        text: period?['endDate']?.toString().substring(0, 10) ??
+            _dateKey(DateTime.now()));
+    final reason =
+        TextEditingController(text: period?['reason'] as String? ?? '');
+    final note = TextEditingController(text: period?['note'] as String? ?? '');
+    final saved = await showModalBottomSheet<bool>(
+        context: context,
+        isScrollControlled: true,
+        builder: (context) => SheetFrame(
+            title: period == null ? 'Add planned leave' : 'Edit planned leave',
+            child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  TextField(
+                      controller: start,
+                      decoration: const InputDecoration(
+                          labelText: 'Start date', hintText: 'YYYY-MM-DD')),
+                  const SizedBox(height: 12),
+                  TextField(
+                      controller: end,
+                      decoration: const InputDecoration(
+                          labelText: 'End date', hintText: 'YYYY-MM-DD')),
+                  const SizedBox(height: 12),
+                  TextField(
+                      controller: reason,
+                      decoration: const InputDecoration(labelText: 'Reason')),
+                  const SizedBox(height: 12),
+                  TextField(
+                      controller: note,
+                      decoration:
+                          const InputDecoration(labelText: 'Note (optional)')),
+                  const SizedBox(height: 18),
+                  FilledButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      child: Text(period == null ? 'Add leave' : 'Save leave')),
+                ])));
+    if (saved == true) {
+      final body = {
+        'startDate': start.text.trim(),
+        'endDate': end.text.trim(),
+        'reason': reason.text.trim(),
+        if (note.text.trim().isNotEmpty) 'note': note.text.trim(),
+      };
+      if (period == null) {
+        await widget.api.createAttendanceLeavePeriod(body);
+      } else {
+        await widget.api
+            .updateAttendanceLeavePeriod(period['id'] as String, body);
+      }
+      await _load();
+    }
+    await Future<void>.delayed(const Duration(milliseconds: 350));
+    start.dispose();
+    end.dispose();
+    reason.dispose();
+    note.dispose();
+  }
+
+  Future<void> _deleteLeave(Map<String, dynamic> period) async {
+    await widget.api.deleteAttendanceLeavePeriod(period['id'] as String);
+    await _load();
   }
 
   Future<void> _edit(DateTime date, [Map<String, dynamic>? record]) async {
@@ -296,6 +378,13 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                                   child: _Total(
                                       value: '$offDays', label: 'Off days'))
                             ]),
+                            const SizedBox(height: 12),
+                            Text(
+                                'Off $offDays  ·  Leave $leaveDays  ·  Scheduled off $scheduledOffDays${missingDays > 0 ? '  ·  Missing $missingDays' : ''}',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(color: AppColors.secondary)),
                           ])),
                   const SizedBox(height: 12),
                   GlassSurface(
@@ -368,6 +457,35 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                         const Icon(Icons.chevron_right_rounded),
                       ])),
                   const SizedBox(height: 18),
+                  SectionHeader(
+                      title: 'Planned Leave',
+                      action: 'Add',
+                      onAction: () => _editLeave()),
+                  const SizedBox(height: 8),
+                  if (leavePeriods.isEmpty)
+                    const GlassSurface(
+                        padding: EdgeInsets.all(16),
+                        child: Text('No planned leave',
+                            style: TextStyle(color: AppColors.secondary)))
+                  else
+                    GroupedSurface(
+                        children: leavePeriods
+                            .map((period) => AppRow(
+                                  leading: const Icon(
+                                      Icons.event_available_rounded,
+                                      color: AppColors.warning),
+                                  title: period['reason'] as String? ?? 'Leave',
+                                  subtitle:
+                                      '${period['startDate'].toString().substring(0, 10)} → ${period['endDate'].toString().substring(0, 10)}',
+                                  trailing: IconButton(
+                                      tooltip: 'Delete leave',
+                                      icon: const Icon(
+                                          Icons.delete_outline_rounded),
+                                      onPressed: () => _deleteLeave(period)),
+                                  onTap: () => _editLeave(period),
+                                ))
+                            .toList()),
+                  const SizedBox(height: 18),
                   Row(children: [
                     IconButton(
                         tooltip: 'Previous month',
@@ -391,37 +509,63 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                   const SectionHeader(title: 'Monthly days'),
                   const SizedBox(height: 8),
                   GroupedSurface(
-                      children: _elapsedDates.map((date) {
-                    final record = _recordFor(date);
+                      children: (timesheetDays.isEmpty
+                              ? _elapsedDates.map((date) => {
+                                    'date': _dateKey(date),
+                                    'state': _recordFor(date) == null
+                                        ? 'NO_RECORD'
+                                        : 'WORKED',
+                                    'record': _recordFor(date),
+                                    'future': false
+                                  })
+                              : timesheetDays)
+                          .map((day) {
+                    final date = DateTime.parse(day['date'] as String);
+                    final record = day['record'] as Map<String, dynamic>?;
                     final minutes = record?['workedMinutes'] as int? ?? 0;
-                    final hasRecord = record != null;
+                    final state = day['state'] as String? ?? 'NO_RECORD';
+                    final future = day['future'] == true;
+                    final label = switch (state) {
+                      'WORKED' =>
+                        '${record?['source'] == 'AUTO' ? 'Auto' : 'Edited'} · ${_duration(minutes)}',
+                      'OFF' =>
+                        'Off · ${record?['offReason'] ?? 'Reason unavailable'}',
+                      'LEAVE' =>
+                        'Leave · ${(day['leavePeriod'] as Map<String, dynamic>?)?['reason'] ?? 'Planned leave'}',
+                      'SCHEDULED_OFF' => 'Scheduled off',
+                      'FUTURE' => 'Future',
+                      _ => 'No record · Add work record',
+                    };
                     return AppRow(
                         leading: Icon(
-                            !hasRecord
-                                ? Icons.add_circle_outline_rounded
-                                : minutes > 0
-                                    ? Icons.check_circle_outline_rounded
-                                    : Icons.remove_circle_outline_rounded,
-                            color: !hasRecord
-                                ? AppColors.accent
-                                : minutes > 0
-                                    ? AppColors.success
+                            state == 'WORKED'
+                                ? Icons.check_circle_outline_rounded
+                                : state == 'LEAVE'
+                                    ? Icons.event_available_rounded
+                                    : state == 'SCHEDULED_OFF'
+                                        ? Icons.weekend_outlined
+                                        : future
+                                            ? Icons.lock_clock_outlined
+                                            : Icons.add_circle_outline_rounded,
+                            color: state == 'WORKED'
+                                ? AppColors.success
+                                : future
+                                    ? AppColors.tertiary
                                     : AppColors.warning),
                         title: _date(date.toIso8601String()),
-                        subtitle: !hasRecord
-                            ? 'No record · Add work record'
-                            : minutes > 0
-                                ? '${record['source'] == 'AUTO' ? 'Auto' : 'Edited'} · ${_duration(minutes)}'
-                                : 'Off · ${record['offReason'] ?? 'Reason unavailable'}',
-                        trailing: Text(hasRecord ? _duration(minutes) : 'Add',
+                        subtitle: label,
+                        trailing: Text(
+                            state == 'WORKED'
+                                ? _duration(minutes)
+                                : state == 'NO_RECORD'
+                                    ? 'Add'
+                                    : '',
                             style: TextStyle(
                                 fontWeight: FontWeight.w600,
-                                color: !hasRecord
+                                color: state == 'NO_RECORD'
                                     ? AppColors.accent
-                                    : minutes > 0
-                                        ? AppColors.ink
-                                        : AppColors.warning)),
-                        onTap: () => _edit(date, record));
+                                    : AppColors.ink)),
+                        onTap: future ? null : () => _edit(date, record));
                   }).toList()),
                 ],
               ])),

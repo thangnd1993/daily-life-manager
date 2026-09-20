@@ -144,3 +144,8 @@ authentication, session rotation, audit, admin status enforcement, attendance, f
 Notification persistence. It uses `NODE_ENV=test` to suppress BullMQ workers and always targets a disposable migrated
 database that is cleaned between cases. CI runs the e2e suite in its existing ephemeral PostgreSQL job; no live Gold or
 Firebase service is contacted.
+## Attendance schedule and timesheet
+
+Each user stores ISO weekday numbers (`1` Monday through `7` Sunday) in a typed PostgreSQL integer array. Existing users migrate to Monday–Saturday working and Sunday scheduled off, preserving the prior six-day product expectation while preventing Sunday auto-records. Planned leave uses inclusive PostgreSQL `DATE` ranges and does not materialize daily OFF records.
+
+Monthly daily-state precedence is: explicit positive work, explicit OFF, planned leave, scheduled off, missing expected work, then future. Explicit work therefore overrides both schedule and planned leave without changing the leave-period history.

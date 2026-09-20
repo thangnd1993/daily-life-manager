@@ -20,6 +20,14 @@ describe('AttendanceService', () => {
       aggregate: jest.fn(),
       upsert: jest.fn(),
     },
+    attendanceLeavePeriod: {
+      findFirst: jest.fn(),
+      findMany: jest.fn(),
+      create: jest.fn(),
+      updateMany: jest.fn(),
+      findFirstOrThrow: jest.fn(),
+      deleteMany: jest.fn(),
+    },
     user: {
       count: jest.fn(),
       findUnique: jest.fn(),
@@ -39,7 +47,10 @@ describe('AttendanceService', () => {
       leaveReason: null,
       attendanceTimezone: 'Asia/Ho_Chi_Minh',
       defaultDailyWorkMinutes: 240,
+      workingWeekdays: [1, 2, 3, 4, 5, 6],
     });
+    prisma.attendanceLeavePeriod.findFirst.mockResolvedValue(null);
+    prisma.attendanceLeavePeriod.findMany.mockResolvedValue([]);
     service = new AttendanceService(
       prisma as unknown as PrismaService,
       notifications as never,
@@ -275,6 +286,7 @@ describe('AttendanceService', () => {
       leaveModeEnabled: true,
       attendanceTimezone: 'UTC',
       defaultDailyWorkMinutes: 240,
+      workingWeekdays: [1, 2, 3, 4, 5, 6],
     });
     prisma.attendance.upsert.mockResolvedValue({ id: 'manual-1' });
     await expect(
@@ -289,6 +301,7 @@ describe('AttendanceService', () => {
       leaveModeEnabled: false,
       attendanceTimezone: 'UTC',
       defaultDailyWorkMinutes: 240,
+      workingWeekdays: [1, 2, 3, 4, 5, 6],
     });
     await expect(
       service.updateDay('owner-1', '2026-01-15', {
@@ -317,6 +330,7 @@ describe('AttendanceService', () => {
         id: 'user-1',
         attendanceTimezone: 'Asia/Ho_Chi_Minh',
         defaultDailyWorkMinutes: 240,
+        workingWeekdays: [1, 2, 3, 4, 5, 6],
       },
     ]);
     prisma.attendance.findUnique.mockResolvedValue(null);
@@ -335,5 +349,142 @@ describe('AttendanceService', () => {
       }),
     );
     expect(notifications.ensureAttendance).toHaveBeenCalledWith('auto-1');
+  });
+
+  it('skips automatic work on scheduled off and leave-covered dates', async () => {
+    prisma.user.findMany.mockResolvedValue([
+      {
+        id: 'user-1',
+        attendanceTimezone: 'UTC',
+        defaultDailyWorkMinutes: 360,
+        workingWeekdays: [1, 2, 3, 4, 5, 6],
+      },
+    ]);
+    await expect(
+      service.runAutomatic(new Date('2026-09-06T08:00:00Z')),
+    ).resolves.toEqual({ eligibleUsers: 1, created: 0 });
+    expect(prisma.attendance.create).not.toHaveBeenCalled();
+
+    prisma.attendanceLeavePeriod.findFirst.mockResolvedValue({ id: 'leave-1' });
+    await expect(
+      service.runAutomatic(new Date('2026-09-07T08:00:00Z')),
+    ).resolves.toEqual({ eligibleUsers: 1, created: 0 });
+    expect(notifications.ensureAttendance).not.toHaveBeenCalled();
+  });
+
+  it('creates, updates, and deletes only owner-scoped leave periods', async () => {
+    const dto = {
+      startDate: '2026-10-01',
+      endDate: '2026-10-03',
+      reason: 'Annual leave',
+      note: 'Trip',
+    };
+    prisma.attendanceLeavePeriod.create.mockResolvedValue({ id: 'leave-1' });
+    await service.createLeavePeriod('owner-1', dto);
+    expect(prisma.attendanceLeavePeriod.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        userId: 'owner-1',
+        reason: 'Annual leave',
+      }),
+    });
+
+    prisma.attendanceLeavePeriod.updateMany.mockResolvedValue({ count: 1 });
+    prisma.attendanceLeavePeriod.findFirstOrThrow.mockResolvedValue({
+      id: 'leave-1',
+    });
+    await service.updateLeavePeriod('owner-1', 'leave-1', dto);
+    expect(prisma.attendanceLeavePeriod.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: 'leave-1', userId: 'owner-1' } }),
+    );
+
+    prisma.attendanceLeavePeriod.deleteMany.mockResolvedValueOnce({ count: 1 });
+    await expect(
+      service.deleteLeavePeriod('owner-1', 'leave-1'),
+    ).resolves.toEqual({ deleted: true });
+    prisma.attendanceLeavePeriod.deleteMany.mockResolvedValueOnce({ count: 0 });
+    await expect(
+      service.deleteLeavePeriod('other-user', 'leave-1'),
+    ).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('rejects invalid and overlong leave ranges', async () => {
+    await expect(
+      service.createLeavePeriod('owner-1', {
+        startDate: '2026-10-03',
+        endDate: '2026-10-01',
+        reason: 'Annual leave',
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    await expect(
+      service.createLeavePeriod('owner-1', {
+        startDate: '2026-01-01',
+        endDate: '2027-01-02',
+        reason: 'Annual leave',
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('derives timesheet precedence and avoids double counting', async () => {
+    jest.useFakeTimers().setSystemTime(new Date('2026-09-20T08:00:00Z'));
+    prisma.attendance.findMany.mockResolvedValue([
+      {
+        id: 'worked',
+        attendanceDate: new Date('2026-09-01'),
+        workedMinutes: 300,
+        status: 'WORKED',
+      },
+      {
+        id: 'off',
+        attendanceDate: new Date('2026-09-02'),
+        workedMinutes: 0,
+        status: 'OFF',
+      },
+      {
+        id: 'override',
+        attendanceDate: new Date('2026-09-03'),
+        workedMinutes: 120,
+        status: 'WORKED',
+      },
+    ]);
+    prisma.attendance.count.mockResolvedValueOnce(3).mockResolvedValueOnce(1);
+    prisma.attendance.aggregate.mockResolvedValue({
+      _count: 2,
+      _sum: { workedMinutes: 420 },
+    });
+    prisma.attendanceLeavePeriod.findMany.mockResolvedValue([
+      {
+        id: 'leave-1',
+        startDate: new Date('2026-09-03'),
+        endDate: new Date('2026-09-04'),
+        reason: 'Annual leave',
+      },
+    ]);
+    const query = Object.assign(new AttendanceHistoryQueryDto(), {
+      year: 2026,
+      month: 9,
+    });
+    const result = await service.history('owner-1', query);
+    expect(result).toMatchObject({
+      workedDays: 2,
+      totalWorkedMinutes: 420,
+      offDays: 1,
+      leaveDays: 1,
+    });
+    expect(result.days.find((day) => day.date === '2026-09-03')?.state).toBe(
+      'WORKED',
+    );
+    expect(result.days.find((day) => day.date === '2026-09-04')?.state).toBe(
+      'LEAVE',
+    );
+    expect(result.days.find((day) => day.date === '2026-09-06')?.state).toBe(
+      'SCHEDULED_OFF',
+    );
+    expect(result.days.find((day) => day.date === '2026-09-07')?.state).toBe(
+      'NO_RECORD',
+    );
+    expect(result.days.find((day) => day.date === '2026-09-21')?.state).toBe(
+      'FUTURE',
+    );
+    jest.useRealTimers();
   });
 });

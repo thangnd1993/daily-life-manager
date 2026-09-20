@@ -61,6 +61,21 @@ class ApiClient {
         'enabled': enabled,
         if (reason != null) 'reason': reason,
       }) as Map<String, dynamic>;
+  Future<List<Map<String, dynamic>>> attendanceLeavePeriods() async =>
+      (await request('GET', 'attendance/leave-periods') as List<dynamic>)
+          .cast<Map<String, dynamic>>();
+  Future<Map<String, dynamic>> createAttendanceLeavePeriod(
+          Map<String, dynamic> body) async =>
+      await request('POST', 'attendance/leave-periods', body: body)
+          as Map<String, dynamic>;
+  Future<Map<String, dynamic>> updateAttendanceLeavePeriod(
+          String id, Map<String, dynamic> body) async =>
+      await request('PATCH', 'attendance/leave-periods/$id', body: body)
+          as Map<String, dynamic>;
+  Future<void> deleteAttendanceLeavePeriod(String id) async {
+    await request('DELETE', 'attendance/leave-periods/$id');
+  }
+
   Future<List<Map<String, dynamic>>> financeCategories() async =>
       (await request('GET', 'finance/categories') as List<dynamic>)
           .cast<Map<String, dynamic>>();

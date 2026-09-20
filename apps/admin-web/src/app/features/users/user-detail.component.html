@@ -78,6 +78,39 @@
           <strong>{{ user.attendanceEnabled ? 'Enabled' : 'Disabled' }}</strong> · Default
           {{ formatDuration(user.defaultDailyWorkMinutes) }} · {{ user.attendanceTimezone }}
         </p>
+        <div class="actions">
+          <label>
+            Default minutes
+            <input #dailyMinutes type="number" min="1" max="1440" [value]="user.defaultDailyWorkMinutes" />
+          </label>
+          <button type="button" [disabled]="saving" (click)="saveDefaultDuration(user, dailyMinutes.value)">
+            Save duration
+          </button>
+        </div>
+        <p><strong>Working weekdays</strong></p>
+        <div class="actions" aria-label="Working weekdays">
+          @for (
+            day of [
+              { n: 1, l: 'Mon' },
+              { n: 2, l: 'Tue' },
+              { n: 3, l: 'Wed' },
+              { n: 4, l: 'Thu' },
+              { n: 5, l: 'Fri' },
+              { n: 6, l: 'Sat' },
+              { n: 7, l: 'Sun' },
+            ];
+            track day.n
+          ) {
+            <button
+              type="button"
+              [class.primary]="user.workingWeekdays.includes(day.n)"
+              [disabled]="saving"
+              (click)="toggleWorkingDay(user, day.n)"
+            >
+              {{ day.l }} {{ user.workingWeekdays.includes(day.n) ? '✓' : 'OFF' }}
+            </button>
+          }
+        </div>
         @if (user.leaveModeEnabled) {
           <p>Leave Mode is active for this user.</p>
         }
@@ -145,8 +178,18 @@
             <p>
               <strong>{{ attendance.data?.workedDays }}</strong> worked days ·
               <strong>{{ formatDuration(attendance.data?.totalWorkedMinutes ?? 0) }}</strong> total ·
-              {{ attendance.data?.offDays }} off days
+              {{ attendance.data?.offDays }} off days · {{ attendance.data?.leaveDays }} leave ·
+              {{ attendance.data?.scheduledOffDays }} scheduled off
             </p>
+            @if (attendance.data?.leavePeriods?.length) {
+              <h3>Planned leave</h3>
+              @for (period of attendance.data?.leavePeriods; track period.id) {
+                <p>
+                  {{ period.startDate | date: 'mediumDate' }} → {{ period.endDate | date: 'mediumDate' }} ·
+                  {{ period.reason }}
+                </p>
+              }
+            }
             @for (record of attendance.data?.items; track record.id) {
               <dl>
                 <div>

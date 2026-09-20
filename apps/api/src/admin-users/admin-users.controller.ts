@@ -76,10 +76,10 @@ export class AdminUsersController {
     @Body() dto: UpdateAttendanceEnabledDto,
     @Req() request: Request,
   ): Promise<AdminUserDetail> {
-    return this.users.updateAttendanceEnabled(
+    return this.users.updateAttendanceConfiguration(
       actor,
       id,
-      dto.enabled,
+      dto,
       auditContext(request),
     );
   }

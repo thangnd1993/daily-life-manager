@@ -16,6 +16,7 @@
 - [x] Milestone 14 — Production Docker and deployment preparation
 - [x] Milestone 15 — iOS and Android release preparation
 - [x] Phase 16 — Historical Attendance Entry & Editing
+- [ ] Phase 17 — Attendance Schedule, Leave Periods & Monthly Timesheet
 
 Milestones 1–15 are complete. GitHub-hosted CI verifies the API with PostgreSQL and Redis, the authenticated Angular admin
 portal, the Flutter application and unsigned Android release compilation, and the production Docker packaging. All planned

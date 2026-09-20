@@ -239,7 +239,38 @@ describe('critical application journeys (e2e)', () => {
     await request(app.getHttpServer())
       .patch(`/api/admin/users/${member.user.id}/attendance`)
       .set('Authorization', bearer(adminToken))
-      .send({ enabled: true })
+      .send({
+        enabled: true,
+        defaultDailyWorkMinutes: 360,
+        workingWeekdays: [1, 2, 3, 4, 5],
+      })
+      .expect(200);
+    const leave = await request(app.getHttpServer())
+      .post('/api/attendance/leave-periods')
+      .set('Authorization', bearer(member.accessToken))
+      .send({
+        startDate: '2027-01-10',
+        endDate: '2027-01-12',
+        reason: 'Annual leave',
+      })
+      .expect(201);
+    await request(app.getHttpServer())
+      .get('/api/attendance/leave-periods')
+      .set('Authorization', bearer(member.accessToken))
+      .expect(200)
+      .expect(({ body }) => expect(body).toHaveLength(1));
+    await request(app.getHttpServer())
+      .patch(`/api/attendance/leave-periods/${leave.body.id}`)
+      .set('Authorization', bearer(member.accessToken))
+      .send({
+        startDate: '2027-01-11',
+        endDate: '2027-01-13',
+        reason: 'Personal leave',
+      })
+      .expect(200);
+    await request(app.getHttpServer())
+      .delete(`/api/attendance/leave-periods/${leave.body.id}`)
+      .set('Authorization', bearer(member.accessToken))
       .expect(200);
     const refreshResults = await Promise.all([
       request(app.getHttpServer())

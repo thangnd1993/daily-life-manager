@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Post,
@@ -21,6 +22,7 @@ import {
   AttendanceHistoryQueryDto,
   CheckInDto,
   LeaveModeDto,
+  LeavePeriodDto,
   TimezoneQueryDto,
   UpdateAttendanceDto,
 } from './dto/attendance.dto';
@@ -68,6 +70,37 @@ export class AttendanceController {
     @Body() dto: LeaveModeDto,
   ) {
     return this.attendance.setLeaveMode(user.id, dto.enabled, dto.reason);
+  }
+
+  @Get('leave-periods')
+  listLeavePeriods(@CurrentUser() user: AuthenticatedUser) {
+    return this.attendance.listLeavePeriods(user.id);
+  }
+
+  @Post('leave-periods')
+  createLeavePeriod(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: LeavePeriodDto,
+  ) {
+    return this.attendance.createLeavePeriod(user.id, dto);
+  }
+
+  @Patch('leave-periods/:id')
+  updateLeavePeriod(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+    @Body() dto: LeavePeriodDto,
+  ) {
+    return this.attendance.updateLeavePeriod(user.id, id, dto);
+  }
+
+  @Delete('leave-periods/:id')
+  @ApiOperation({ summary: 'Delete an owner-scoped planned leave period' })
+  deleteLeavePeriod(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+  ) {
+    return this.attendance.deleteLeavePeriod(user.id, id);
   }
 
   @Put(':date')

@@ -32,6 +32,13 @@ export class UsersService {
     return this.http.patch<AdminUserDetail>(`admin/users/${id}/attendance`, { enabled });
   }
 
+  updateAttendanceConfiguration(
+    id: string,
+    configuration: { enabled: boolean; defaultDailyWorkMinutes: number; workingWeekdays: number[] },
+  ): Observable<AdminUserDetail> {
+    return this.http.patch<AdminUserDetail>(`admin/users/${id}/attendance`, configuration);
+  }
+
   attendance(id: string, year: number, month: number): Observable<AttendancePage> {
     const params = new HttpParams().set('year', year).set('month', month).set('pageSize', 31);
     return this.http.get<AttendancePage>(`admin/users/${id}/attendance`, { params });

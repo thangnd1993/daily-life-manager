@@ -20,6 +20,8 @@ class _HomeScreenState extends State<HomeScreen>
   bool attendanceEnabled = false;
   bool leaveMode = false;
   Map<String, dynamic>? todayWork;
+  String todayState = 'NO_RECORD';
+  Map<String, dynamic>? todayLeave;
   Map<String, dynamic> finance = const {};
   List<Map<String, dynamic>> budgets = const [];
   List<Map<String, dynamic>> prices = const [];
@@ -55,6 +57,8 @@ class _HomeScreenState extends State<HomeScreen>
         attendanceEnabled = attendance['featureEnabled'] != false;
         leaveMode = attendance['leaveModeEnabled'] == true;
         todayWork = attendance['record'] as Map<String, dynamic>?;
+        todayState = attendance['derivedState'] as String? ?? 'NO_RECORD';
+        todayLeave = attendance['leavePeriod'] as Map<String, dynamic>?;
         finance = results[1] as Map<String, dynamic>;
         budgets = results[2] as List<Map<String, dynamic>>;
         prices = results[3] as List<Map<String, dynamic>>;
@@ -94,6 +98,10 @@ class _HomeScreenState extends State<HomeScreen>
   String _todayWorkLabel() {
     final minutes = todayWork?['workedMinutes'] as int?;
     if (minutes == null) {
+      if (todayState == 'LEAVE') {
+        return 'Leave · ${todayLeave?['reason'] ?? 'Planned leave'}';
+      }
+      if (todayState == 'SCHEDULED_OFF') return 'Scheduled off';
       return checkedIn ? '4 h recorded' : 'No work recorded yet';
     }
     if (minutes == 0) {
@@ -101,9 +109,18 @@ class _HomeScreenState extends State<HomeScreen>
     }
     final hours = minutes ~/ 60;
     final remainder = minutes % 60;
+    final source = todayWork?['source'] == 'AUTO'
+        ? 'Auto'
+        : todayWork?['source'] == null
+            ? 'recorded'
+            : 'Edited';
     return remainder == 0
-        ? '$hours h recorded'
-        : '$hours h $remainder min recorded';
+        ? source == 'recorded'
+            ? '$hours h recorded'
+            : '$hours h · $source'
+        : source == 'recorded'
+            ? '$hours h $remainder min recorded'
+            : '$hours h $remainder min · $source';
   }
 
   @override

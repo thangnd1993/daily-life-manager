@@ -113,6 +113,43 @@ export class UserDetailComponent {
     });
   }
 
+  saveDefaultDuration(user: AdminUserDetail, value: string): void {
+    const minutes = Number(value);
+    if (!Number.isInteger(minutes) || minutes < 1 || minutes > 1440) {
+      this.feedback = 'Default duration must be between 1 and 1440 minutes.';
+      return;
+    }
+    this.saveAttendanceConfiguration(user, minutes, user.workingWeekdays);
+  }
+
+  toggleWorkingDay(user: AdminUserDetail, day: number): void {
+    const weekdays = user.workingWeekdays.includes(day)
+      ? user.workingWeekdays.filter((value) => value !== day)
+      : [...user.workingWeekdays, day].sort();
+    this.saveAttendanceConfiguration(user, user.defaultDailyWorkMinutes, weekdays);
+  }
+
+  private saveAttendanceConfiguration(user: AdminUserDetail, minutes: number, weekdays: number[]): void {
+    this.saving = true;
+    this.users
+      .updateAttendanceConfiguration(user.id, {
+        enabled: user.attendanceEnabled,
+        defaultDailyWorkMinutes: minutes,
+        workingWeekdays: weekdays,
+      })
+      .subscribe({
+        next: () => {
+          this.saving = false;
+          this.feedback = 'Attendance configuration updated.';
+          this.reloadState.next(this.reloadState.value + 1);
+        },
+        error: () => {
+          this.saving = false;
+          this.feedback = 'Attendance configuration could not be updated.';
+        },
+      });
+  }
+
   formatDuration(minutes: number): string {
     const hours = Math.floor(minutes / 60);
     const remainder = minutes % 60;

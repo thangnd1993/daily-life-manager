@@ -10,6 +10,8 @@ import {
   Max,
   MaxLength,
   Min,
+  IsArray,
+  ArrayUnique,
 } from 'class-validator';
 
 export enum UserSortField {
@@ -80,4 +82,20 @@ export class UpdateAttendanceEnabledDto {
   @ApiProperty()
   @IsBoolean()
   enabled!: boolean;
+
+  @ApiPropertyOptional({ minimum: 1, maximum: 1440 })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(1440)
+  defaultDailyWorkMinutes?: number;
+
+  @ApiPropertyOptional({ type: [Number], example: [1, 2, 3, 4, 5, 6] })
+  @IsOptional()
+  @IsArray()
+  @ArrayUnique()
+  @IsInt({ each: true })
+  @Min(1, { each: true })
+  @Max(7, { each: true })
+  workingWeekdays?: number[];
 }

@@ -111,6 +111,31 @@ void main() {
     expect(jsonDecode(requests.last.body)['workedMinutes'], 360);
   });
 
+  test('maps planned leave CRUD endpoints', () async {
+    final requests = <http.Request>[];
+    final api = ApiClient(
+      tokenStore: MemoryStore(),
+      client: MockClient((request) async {
+        requests.add(request);
+        if (request.method == 'GET') return http.Response('[]', 200);
+        if (request.method == 'DELETE') return http.Response('', 200);
+        return http.Response(jsonEncode({'id': 'leave-1'}), 200);
+      }),
+    );
+    const body = {
+      'startDate': '2026-09-10',
+      'endDate': '2026-09-12',
+      'reason': 'Annual leave',
+    };
+    await api.attendanceLeavePeriods();
+    await api.createAttendanceLeavePeriod(body);
+    await api.updateAttendanceLeavePeriod('leave-1', body);
+    await api.deleteAttendanceLeavePeriod('leave-1');
+    expect(requests.map((request) => request.method),
+        ['GET', 'POST', 'PATCH', 'DELETE']);
+    expect(requests.last.url.path, '/api/attendance/leave-periods/leave-1');
+  });
+
   test('maps finance summary, categories, transaction CRUD, and BigInt strings',
       () async {
     final requests = <http.Request>[];

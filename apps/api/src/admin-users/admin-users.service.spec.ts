@@ -21,6 +21,9 @@ const safeUser = {
   lastLoginAt: null,
   createdAt: now,
   updatedAt: now,
+  attendanceEnabled: true,
+  defaultDailyWorkMinutes: 240,
+  workingWeekdays: [1, 2, 3, 4, 5, 6],
 };
 const admin: AuthenticatedUser = {
   ...safeUser,
@@ -166,5 +169,36 @@ describe('AdminUsersService', () => {
     await expect(
       service.updateStatus(admin, safeUser.id, UserStatus.INACTIVE),
     ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('updates and audits the admin-controlled Attendance schedule', async () => {
+    prisma.$transaction.mockImplementation(
+      async (callback: (client: typeof transaction) => Promise<void>) =>
+        callback(transaction),
+    );
+    transaction.user.findUnique.mockResolvedValue(safeUser);
+    prisma.user.findUnique.mockResolvedValue({
+      ...safeUser,
+      _count: { authSessions: 0 },
+    });
+    await service.updateAttendanceConfiguration(admin, safeUser.id, {
+      enabled: true,
+      defaultDailyWorkMinutes: 480,
+      workingWeekdays: [1, 2, 3, 4, 5],
+    });
+    expect(transaction.user.update).toHaveBeenCalledWith({
+      where: { id: safeUser.id },
+      data: expect.objectContaining({
+        attendanceEnabled: true,
+        defaultDailyWorkMinutes: 480,
+        workingWeekdays: [1, 2, 3, 4, 5],
+      }),
+    });
+    expect(audit.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'ADMIN_ATTENDANCE_CONFIGURATION_CHANGED',
+      }),
+      transaction,
+    );
   });
 });

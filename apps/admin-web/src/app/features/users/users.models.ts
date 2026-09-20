@@ -14,6 +14,7 @@ export interface AdminUser {
   leaveModeEnabled: boolean;
   attendanceTimezone: string;
   defaultDailyWorkMinutes: number;
+  workingWeekdays: number[];
 }
 
 export interface AdminUserDetail extends AdminUser {
@@ -54,6 +55,13 @@ export interface AttendancePage {
   workedDays: number;
   totalWorkedMinutes: number;
   offDays: number;
+  leaveDays: number;
+  scheduledOffDays: number;
+  missingExpectedDays: number;
+  workingWeekdays: number[];
+  defaultDailyWorkMinutes: number;
+  leavePeriods: Array<{ id: string; startDate: string; endDate: string; reason: string; note: string | null }>;
+  days: Array<{ date: string; state: string; scheduledWorking: boolean; future: boolean }>;
   year: number;
   month: number;
 }

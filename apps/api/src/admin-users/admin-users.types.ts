@@ -14,6 +14,7 @@ export interface AdminUserItem {
   leaveModeEnabled: boolean;
   attendanceTimezone: string;
   defaultDailyWorkMinutes: number;
+  workingWeekdays: number[];
 }
 
 export interface AdminUserDetail extends AdminUserItem {

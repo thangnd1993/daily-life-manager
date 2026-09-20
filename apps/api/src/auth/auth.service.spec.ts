@@ -64,6 +64,7 @@ class FakeDatabase {
           leaveReason: null,
           attendanceTimezone: 'Asia/Ho_Chi_Minh',
           defaultDailyWorkMinutes: 240,
+          workingWeekdays: [1, 2, 3, 4, 5, 6],
           createdAt: now,
           updatedAt: now,
         };

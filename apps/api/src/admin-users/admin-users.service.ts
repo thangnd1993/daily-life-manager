@@ -8,7 +8,10 @@ import { AuthenticatedUser } from '../auth/auth.types';
 import { AuditService } from '../audit/audit.service';
 import { AuditContext } from '../audit/audit.types';
 import { PrismaService } from '../database/prisma.service';
-import { ListUsersQueryDto } from './dto/admin-users.dto';
+import {
+  ListUsersQueryDto,
+  UpdateAttendanceEnabledDto,
+} from './dto/admin-users.dto';
 import { AdminUserDetail, PaginatedUsers } from './admin-users.types';
 
 const safeUserSelect = {
@@ -25,6 +28,7 @@ const safeUserSelect = {
   leaveModeEnabled: true,
   attendanceTimezone: true,
   defaultDailyWorkMinutes: true,
+  workingWeekdays: true,
 } satisfies Prisma.UserSelect;
 
 @Injectable()
@@ -154,14 +158,31 @@ export class AdminUsersService {
     enabled: boolean,
     context?: AuditContext,
   ): Promise<AdminUserDetail> {
+    return this.updateAttendanceConfiguration(actor, id, { enabled }, context);
+  }
+
+  async updateAttendanceConfiguration(
+    actor: AuthenticatedUser,
+    id: string,
+    configuration: UpdateAttendanceEnabledDto,
+    context?: AuditContext,
+  ): Promise<AdminUserDetail> {
     await this.prisma.$transaction(async (transaction) => {
       const target = await transaction.user.findUnique({ where: { id } });
       if (!target) throw new NotFoundException('User not found');
       await transaction.user.update({
         where: { id },
         data: {
-          attendanceEnabled: enabled,
-          ...(enabled
+          attendanceEnabled: configuration.enabled,
+          ...(configuration.defaultDailyWorkMinutes === undefined
+            ? {}
+            : {
+                defaultDailyWorkMinutes: configuration.defaultDailyWorkMinutes,
+              }),
+          ...(configuration.workingWeekdays === undefined
+            ? {}
+            : { workingWeekdays: [...configuration.workingWeekdays].sort() }),
+          ...(configuration.enabled
             ? {}
             : {
                 leaveModeEnabled: false,
@@ -174,12 +195,24 @@ export class AdminUsersService {
         {
           actorUserId: actor.id,
           actorRole: actor.role,
-          action: enabled
-            ? 'ADMIN_ATTENDANCE_ENABLED'
-            : 'ADMIN_ATTENDANCE_DISABLED',
+          action: 'ADMIN_ATTENDANCE_CONFIGURATION_CHANGED',
           targetType: 'USER',
           targetId: id,
-          metadata: { previousEnabled: target.attendanceEnabled, enabled },
+          metadata: {
+            previous: {
+              enabled: target.attendanceEnabled,
+              defaultDailyWorkMinutes: target.defaultDailyWorkMinutes,
+              workingWeekdays: target.workingWeekdays,
+            },
+            next: {
+              enabled: configuration.enabled,
+              defaultDailyWorkMinutes:
+                configuration.defaultDailyWorkMinutes ??
+                target.defaultDailyWorkMinutes,
+              workingWeekdays:
+                configuration.workingWeekdays ?? target.workingWeekdays,
+            },
+          },
           context,
         },
         transaction,

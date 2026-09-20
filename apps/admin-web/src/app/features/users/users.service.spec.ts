@@ -55,6 +55,24 @@ describe('UsersService', () => {
     request.flush({ id: 'user-1', attendanceEnabled: true });
   });
 
+  it('updates duration and working weekdays', () => {
+    service
+      .updateAttendanceConfiguration('user-1', {
+        enabled: true,
+        defaultDailyWorkMinutes: 480,
+        workingWeekdays: [1, 2, 3, 4, 5],
+      })
+      .subscribe();
+    const request = http.expectOne('admin/users/user-1/attendance');
+    expect(request.request.method).toBe('PATCH');
+    expect(request.request.body).toEqual({
+      enabled: true,
+      defaultDailyWorkMinutes: 480,
+      workingWeekdays: [1, 2, 3, 4, 5],
+    });
+    request.flush({ id: 'user-1' });
+  });
+
   it('maps selected-user attendance month parameters', () => {
     service.attendance('user-1', 2026, 8).subscribe();
     const request = http.expectOne(

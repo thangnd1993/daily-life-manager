@@ -30,16 +30,22 @@ void main() {
           if (request.url.path.endsWith('/today')) {
             return http.Response(jsonEncode(_today()), 200);
           }
+          if (request.url.path.endsWith('/leave-periods')) {
+            return http.Response('[]', 200);
+          }
           return http.Response(jsonEncode(_month()), 200);
         }));
     await tester.pumpWidget(MaterialApp(home: AttendanceScreen(api: api)));
     await tester.pumpAndSettle();
 
     expect(find.textContaining('No record'), findsWidgets);
+    await tester.scrollUntilVisible(find.byTooltip('Next month'), 250);
     expect(find.byTooltip('Next month'), findsOneWidget);
     final next = tester.widget<IconButton>(find.byWidgetPredicate(
         (widget) => widget is IconButton && widget.tooltip == 'Next month'));
     expect(next.onPressed, isNull);
+    await tester.ensureVisible(find.byTooltip('Previous month'));
+    await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Previous month'));
     await tester.pumpAndSettle();
     final previous = DateTime(DateTime.now().year, DateTime.now().month - 1);
@@ -68,6 +74,9 @@ void main() {
                     _today(record: saved == null ? null : _record(key, 360))),
                 200);
           }
+          if (request.url.path.endsWith('/leave-periods')) {
+            return http.Response('[]', 200);
+          }
           return http.Response(
               jsonEncode(_month(
                   records: saved == null ? [] : [_record(key, 360)],
@@ -88,6 +97,7 @@ void main() {
 
     expect(saved?['workedMinutes'], 360);
     expect(find.text('6 h'), findsWidgets);
+    await tester.scrollUntilVisible(find.text('Edited · 6 h'), 250);
     expect(find.text('Edited · 6 h'), findsOneWidget);
   });
 
@@ -104,6 +114,9 @@ void main() {
           if (request.url.path.endsWith('/today')) {
             return http.Response(jsonEncode(_today()), 200);
           }
+          if (request.url.path.endsWith('/leave-periods')) {
+            return http.Response('[]', 200);
+          }
           return http.Response(jsonEncode(_month()), 200);
         }));
     await tester.pumpWidget(MaterialApp(home: AttendanceScreen(api: api)));
@@ -118,6 +131,69 @@ void main() {
     expect(saved, containsPair('workedMinutes', 0));
     expect(saved, containsPair('offReason', 'Sick leave'));
   });
+
+  testWidgets('renders schedule and leave states and creates planned leave',
+      (tester) async {
+    Map<String, dynamic>? created;
+    final today = _key(DateTime.now());
+    final period = {
+      'id': 'leave-1',
+      'startDate': today,
+      'endDate': today,
+      'reason': 'Annual leave',
+      'note': null,
+    };
+    final api = ApiClient(
+        tokenStore: _Store(),
+        client: MockClient((request) async {
+          if (request.url.path.endsWith('/today')) {
+            return http.Response(jsonEncode(_today()), 200);
+          }
+          if (request.url.path.endsWith('/leave-periods')) {
+            if (request.method == 'POST') {
+              created = jsonDecode(request.body) as Map<String, dynamic>;
+              return http.Response(jsonEncode({'id': 'leave-2'}), 201);
+            }
+            return http.Response(jsonEncode([period]), 200);
+          }
+          return http.Response(
+              jsonEncode(_month(days: [
+                {
+                  'date': today,
+                  'state': 'LEAVE',
+                  'record': null,
+                  'leavePeriod': period,
+                  'scheduledWorking': true,
+                  'future': false,
+                },
+                {
+                  'date':
+                      _key(DateTime.now().subtract(const Duration(days: 1))),
+                  'state': 'SCHEDULED_OFF',
+                  'record': null,
+                  'leavePeriod': null,
+                  'scheduledWorking': false,
+                  'future': false,
+                },
+              ])),
+              200);
+        }));
+    await tester.pumpWidget(MaterialApp(home: AttendanceScreen(api: api)));
+    await tester.pumpAndSettle();
+    expect(find.text('Annual leave'), findsOneWidget);
+    await tester.scrollUntilVisible(
+        find.textContaining('Leave · Annual leave'), 250);
+    expect(find.textContaining('Leave · Annual leave'), findsOneWidget);
+    expect(find.text('Scheduled off'), findsOneWidget);
+
+    await tester.scrollUntilVisible(find.text('Add'), -250);
+    await tester.tap(find.text('Add').first);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).at(2), 'Personal leave');
+    await tester.tap(find.widgetWithText(FilledButton, 'Add leave'));
+    await tester.pumpAndSettle();
+    expect(created?['reason'], 'Personal leave');
+  });
 }
 
 Map<String, dynamic> _today({Map<String, dynamic>? record}) => {
@@ -128,11 +204,13 @@ Map<String, dynamic> _today({Map<String, dynamic>? record}) => {
 
 Map<String, dynamic> _month({
   List<Map<String, dynamic>> records = const [],
+  List<Map<String, dynamic>> days = const [],
   int workedDays = 0,
   int totalMinutes = 0,
 }) =>
     {
       'items': records,
+      'days': days,
       'workedDays': workedDays,
       'totalWorkedMinutes': totalMinutes,
       'offDays': 0,

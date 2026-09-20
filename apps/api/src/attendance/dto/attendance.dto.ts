@@ -9,6 +9,7 @@ import {
   Max,
   MaxLength,
   Min,
+  Matches,
 } from 'class-validator';
 
 export class TimezoneQueryDto {
@@ -84,4 +85,27 @@ export class LeaveModeDto {
   @IsString()
   @MaxLength(280)
   reason?: string;
+}
+
+export class LeavePeriodDto {
+  @ApiProperty({ example: '2026-09-10' })
+  @IsString()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  startDate!: string;
+
+  @ApiProperty({ example: '2026-09-12' })
+  @IsString()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  endDate!: string;
+
+  @ApiProperty({ example: 'Annual leave', maxLength: 120 })
+  @IsString()
+  @Length(1, 120)
+  reason!: string;
+
+  @ApiPropertyOptional({ maxLength: 280 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(280)
+  note?: string;
 }

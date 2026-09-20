@@ -59,16 +59,18 @@ void main() {
                     'checkedIn': true,
                     'record': {'checkedInAt': '2026-08-29T01:00:00Z'},
                   }
-                : {
-                    'items': [
-                      {
-                        'attendanceDate': '${now.year}-$month-01',
-                        'workedMinutes': 240,
-                        'timezone': 'Asia/Ho_Chi_Minh',
-                        'source': 'MOBILE',
+                : request.url.path.endsWith('/leave-periods')
+                    ? []
+                    : {
+                        'items': [
+                          {
+                            'attendanceDate': '${now.year}-$month-01',
+                            'workedMinutes': 240,
+                            'timezone': 'Asia/Ho_Chi_Minh',
+                            'source': 'MOBILE',
+                          },
+                        ],
                       },
-                    ],
-                  },
           ),
           200,
         ),
@@ -89,6 +91,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('THIS MONTH'), findsOneWidget);
     expect(find.text('4 h'), findsWidgets);
+    await tester.scrollUntilVisible(
+        find.text('01 ${monthNames[now.month - 1]} ${now.year}'), 250);
     expect(find.text('01 ${monthNames[now.month - 1]} ${now.year}'),
         findsOneWidget);
     expect(find.textContaining('No record'), findsWidgets);
